@@ -1,0 +1,6 @@
+@FakeFacebook_HostAddress = http://localhost:5176
+
+GET {{FakeFacebook_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
