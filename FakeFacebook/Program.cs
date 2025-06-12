@@ -10,7 +10,7 @@ using FakeFacebook.Commom;
 var builder = WebApplication.CreateBuilder(args);
 var key = builder.Configuration["JwtSettings:SecretKey"] ?? "2372003HungsssDepZaiSieuCapVuTru";
 if (builder.Environment.IsDevelopment()){
-    builder.WebHost.UseUrls("https://localhost:7158", "http://localhost:5176");
+    builder.WebHost.UseUrls("https://0.0.0.0:7158", "http://0.0.0.0:5176");
     builder.WebHost.ConfigureKestrel(options =>
     {
         options.ListenAnyIP(5176);
@@ -20,7 +20,7 @@ if (builder.Environment.IsDevelopment()){
         });
     });
 } else {
-    var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
     builder.WebHost.ConfigureKestrel(options =>
     {
@@ -88,7 +88,6 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
-    //c.OperationFilter<SwaggerFileUploadFilter>();
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -97,20 +96,15 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement {{
+        new OpenApiSecurityScheme{
+            Reference = new OpenApiReference{
+                Type = ReferenceType.SecurityScheme,
+                Id = "Bearer"
+            }
+        },
+        new string[] {}
+    }});
 });
 builder.Services.AddScoped<GoogleAuthService>();
 builder.Services.AddControllers();
@@ -135,3 +129,5 @@ app.Run();
 //Tools > NuGet Package Manager > Package Manager Console
 //Add-Migration InitialCreate
 //Update-Database
+//29577
+//44334
