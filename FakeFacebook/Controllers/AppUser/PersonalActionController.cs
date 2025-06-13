@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 using System.Text;
+using FakeFacebook.Service;
 
 namespace FakeFacebook.Controllers.AppUser
 {
@@ -18,10 +19,10 @@ namespace FakeFacebook.Controllers.AppUser
     {
         private readonly FakeFacebookDbContext _context;
         private readonly IConfiguration _configuration;
-        private readonly GitHubUploader _githubUploader;
+        private readonly GitHubUploaderSevice _githubUploader;
         private readonly string? _getImageDataLink;
 
-        public PersonalActionController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploader githubUploader)
+        public PersonalActionController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderSevice githubUploader)
         {
             _context = context;
             _configuration = configuration;
@@ -159,11 +160,8 @@ namespace FakeFacebook.Controllers.AppUser
                 {
                     if (infor.Avatar != null)
                     {
-                        using var ms = new MemoryStream();
-                        await infor.Avatar.CopyToAsync(ms);
-                        var bytes = ms.ToArray();
                         string path = $"Images/Avatar/{infor.Avatar?.FileName}";
-                        msg.Object = await _githubUploader.UploadFileAsync(path, bytes, $"Upload {infor.Avatar?.FileName}");
+                        msg.Object = await _githubUploader.UploadFileAsync(path, infor.Avatar!, $"Upload {infor.Avatar?.FileName}");
                         check.Avatar = path;
                         _context.SaveChanges();
 

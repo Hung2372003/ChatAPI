@@ -1,12 +1,12 @@
 ﻿using Google.Apis.Auth;
-namespace FakeFacebook.Commom
+namespace FakeFacebook.Service
 {
     public class GoogleAuthService
     {
         private readonly IConfiguration _config;
-        public GoogleAuthService(IConfiguration configuration) {
+        public GoogleAuthService(IConfiguration configuration)
+        {
             _config = configuration;
-
         }
         public async Task<GoogleJsonWebSignature.Payload?> VerifyGoogleTokenAsync(string idToken)
         {
@@ -21,11 +21,12 @@ namespace FakeFacebook.Commom
                 var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
                 return payload;
             }
-            else { 
+            else
+            {
                 return null;
             }
 
-          
+
         }
     }
 }

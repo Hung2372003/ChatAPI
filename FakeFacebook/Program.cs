@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using FakeFacebook.Hubs;
-using FakeFacebook.Commom;
+using FakeFacebook.Service;
+
 
 var builder = WebApplication.CreateBuilder(args);
 var key = builder.Configuration["JwtSettings:SecretKey"] ?? "2372003HungsssDepZaiSieuCapVuTru";
+
 if (builder.Environment.IsDevelopment()){
     builder.WebHost.UseUrls("https://0.0.0.0:7158", "http://0.0.0.0:5176");
     builder.WebHost.ConfigureKestrel(options =>
@@ -85,9 +87,27 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("Admin")
               .RequireClaim("Permission", "ViewSensitiveData"));
 });
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+    //c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "v1",
+        Title = "ToDo API",
+        Description = "An ASP.NET Core Web API for managing ToDo items",
+        TermsOfService = new Uri("https://example.com/terms"),
+        Contact = new OpenApiContact
+        {
+            Name = "FontendTest",
+            Url = new Uri("https://example.com/contact")
+        },
+        License = new OpenApiLicense
+        {
+            Name = "Example License",
+            Url = new Uri("https://example.com/license")
+        }
+    });
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -111,11 +131,13 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("SmarterDatabase")));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddHttpClient<GitHubUploader>();
-
+builder.Services.AddHttpClient<GitHubUploaderSevice>();
 var app = builder.Build();
-app.UseSwagger(c => c.SerializeAsV2 = true);
-app.UseSwaggerUI(c => {c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");});
+app.UseSwagger();
+app.UseSwaggerUI(c => {
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+    c.RoutePrefix = string.Empty;
+});
 app.UseDefaultFiles();
 if (app.Environment.IsDevelopment()){ app.UseHttpsRedirection();}
 app.UseStaticFiles();

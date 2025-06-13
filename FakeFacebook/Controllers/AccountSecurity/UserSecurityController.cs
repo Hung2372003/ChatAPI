@@ -3,6 +3,7 @@ using FakeFacebook.Data;
 using FakeFacebook.Models;
 using FakeFacebook.ModelViewControllers;
 using FakeFacebook.ModelViewControllers.AccountSecurity;
+using FakeFacebook.Service;
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 namespace FakeFacebook.Controllers.AccountSecurity
@@ -24,8 +25,6 @@ namespace FakeFacebook.Controllers.AccountSecurity
             _googleAuthService = googleAuthService;
         }
 
-
-        // Đăng nhập
         [HttpPost("UserLogin")]
         public JsonResult UserLogin([FromBody] LoginModelViews loginModel) 
         {
@@ -57,14 +56,14 @@ namespace FakeFacebook.Controllers.AccountSecurity
             }
             return new JsonResult(msg);
         }
-        //Đăng ký
+
         [HttpPost("RegisterAcc")]
         public JsonResult RegisterAcc([FromBody] RegisterAccModelViews RegAcc)
         { 
             var msg = new Message() { Id = null, Title = "", Error = false, Object = "" };
             try
             {
-                var check = _context.UserAccounts.FirstOrDefault(x => x.UserName == RegAcc.UserAccout);
+                var check = _context.UserAccounts.FirstOrDefault(x => x.UserName == RegAcc.UserAccount);
                 if (check != null) {
                     msg.Error = true;
                     msg.Title = "Tên tài khoản đã tồn tại";
@@ -86,7 +85,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 var AddAcc = new UserAccount();
                 AddAcc.UserCode = AddInfor.Id;
                 AddAcc.IsDeleted = false;
-                AddAcc.UserName = RegAcc.UserAccout;
+                AddAcc.UserName = RegAcc.UserAccount;
                 AddAcc.UserPassword = RegAcc.Password;
                 AddAcc.CreatedTime = DateTime.Now;
                 AddAcc.UpdatedTime= DateTime.Now;
@@ -106,8 +105,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
                     Expires = DateTimeOffset.UtcNow.AddHours(24)
                 });
                 msg.Object = token;
-                msg.Id = AddAcc.UserCode;
-              
+                msg.Id = AddAcc.UserCode;            
             }
             catch (Exception e) 
             {

@@ -1,5 +1,5 @@
-﻿using FakeFacebook.Commom;
-using FakeFacebook.Data;
+﻿using FakeFacebook.Data;
+using FakeFacebook.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -10,8 +10,8 @@ namespace FakeFacebook.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly FakeFacebookDbContext _context;
-        private readonly GitHubUploader _githubUploader;
-        public TestController(IConfiguration configuration, FakeFacebookDbContext context, GitHubUploader githubUploader)
+        private readonly GitHubUploaderSevice _githubUploader;
+        public TestController(IConfiguration configuration, FakeFacebookDbContext context, GitHubUploaderSevice githubUploader)
         {
             _configuration = configuration;
             _context = context;
@@ -24,15 +24,11 @@ namespace FakeFacebook.Controllers
         {
             if (file == null || file.Length == 0)
                 return BadRequest("File không hợp lệ.");
-
-            using var ms = new MemoryStream();
-            await file.CopyToAsync(ms);
-            var bytes = ms.ToArray();
             string path = $"Images/Avatar/{file.FileName}";
 
             try
             {
-                var getDataLink = await _githubUploader.UploadFileAsync(path, bytes, $"Upload {file.FileName}");
+                var getDataLink = await _githubUploader.UploadFileAsync(path, file, $"Upload {file.FileName}");
                 return Ok(new { message = "Upload thành công", url = getDataLink });
             }
             catch (Exception ex)

@@ -1,4 +1,6 @@
-﻿namespace FakeFacebook.ModelViewControllers
+﻿
+
+namespace FakeFacebook.ModelViewControllers
 {
     public class PostManagementModelViews
     {

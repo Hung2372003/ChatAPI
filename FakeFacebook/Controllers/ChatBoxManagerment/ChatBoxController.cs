@@ -4,6 +4,7 @@ using FakeFacebook.Hubs;
 using FakeFacebook.Models;
 using FakeFacebook.ModelViewControllers.ChatBox;
 using FakeFacebook.ModelViewControllers.ChatBoxManagerment;
+using FakeFacebook.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -17,8 +18,8 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
     {
         private readonly FakeFacebookDbContext _context;
         private readonly string? _getImageDataLink;
-        private readonly GitHubUploader _githubUploader;
-        public ChatBoxController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploader githubUploader)
+        private readonly GitHubUploaderSevice _githubUploader;
+        public ChatBoxController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderSevice githubUploader)
         {
             _context = context;
             _getImageDataLink = configuration["Git:GetImageDataLink"];
@@ -326,13 +327,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                     chatContent.FileCode = chatContent.Id;
                     foreach (var file in FileUpload)
                     {
-
-                        using var ms = new MemoryStream();
-                        await file.CopyToAsync(ms);
-                        var bytes = ms.ToArray();
-                        string path = $"Chatbox/{file.FileName}";
-                        string getDataLink = await _githubUploader.UploadFileAsync(path, bytes, $"Upload {file.FileName}");
-
+                        string getDataLink = await _githubUploader.UploadFileAsync($"Chatbox/{file.FileName}", file, $"Upload {file.FileName}");
                         var SaveFile = new FileChat();
                         SaveFile.FileCode = chatContent.FileCode;
                         SaveFile.Name = file.FileName;
@@ -390,13 +385,8 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
 
                 string avatarPath="";
                 if (ojb.Avatar != null) {
-                    using var ms = new MemoryStream();
-                    await ojb.Avatar.CopyToAsync(ms);
-                    var bytes = ms.ToArray();
-                    string path = $"Images/GroupAvatar/{ojb.Avatar.FileName}";
-                    avatarPath = await _githubUploader.UploadFileAsync(path, bytes, $"Upload {ojb.Avatar.FileName}");
+                    avatarPath = await _githubUploader.UploadFileAsync($"Images/GroupAvatar/{ojb.Avatar.FileName}", ojb.Avatar, $"Upload {ojb.Avatar.FileName}");
                 }
-
                 for (int i = 0; i < ojb.ListUser?.Count; i++)
                 {
                     var addMember = new GroupMember();
@@ -407,14 +397,9 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                     addMember.InvitedTime = DateTime.Now;
                     addMember.InvitedBy = StaticUser;
                     _context.Add(addMember);
-                    _context.SaveChanges();
-                    
+                    _context.SaveChanges();     
                 }
-
                 msg.Title = "Tạo nhóm thành công";
-
-              
-               
                 if (msg.Object is List<object> newList)
                 {
                     newList.Add(new
@@ -423,20 +408,14 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                         GroupAvatar= (creatGroupChat.GroupAvartar!=null)?$"{_getImageDataLink}/{creatGroupChat.GroupAvartar}":null,
                         GroupName = ojb.GroupName,
                         GroupDouble=false,
-                       
-
                     });
                 }
-
-
             }
             catch(Exception e)
             {
                 msg.Title = "Có lỗi sảy ra: " + e.Message;
                 msg.Error=true;
             }
-
-
             return new JsonResult(msg);
         }
         // Post-----------------------------------------------------

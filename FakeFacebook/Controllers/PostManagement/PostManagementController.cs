@@ -2,6 +2,7 @@
 using FakeFacebook.Data;
 using FakeFacebook.Models;
 using FakeFacebook.ModelViewControllers;
+using FakeFacebook.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -11,13 +12,13 @@ namespace FakeFacebook.Controllers.Post
 {
     [ApiController]
     [Route("api/PostManagement")]
-    [Authorize]
+    //[Authorize]
     public class PostManagementController:ControllerBase
     {
         private readonly FakeFacebookDbContext _context;
-        private readonly GitHubUploader _githubUploader;
+        private readonly GitHubUploaderSevice _githubUploader;
         private readonly string? _getImageDataLink;
-        public PostManagementController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploader githubUploader)
+        public PostManagementController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderSevice githubUploader)
         {
             _context = context;
             _githubUploader = githubUploader;
@@ -124,15 +125,13 @@ namespace FakeFacebook.Controllers.Post
             return new JsonResult(msg);
         }
 
-
         [HttpPost("AddNewPost")]
-        public async Task<JsonResult> AddNewPost([FromForm] PostManagementModelViews data)
+        public async Task<IActionResult> AddNewPost([FromForm] PostManagementModelViews data)
         {
             var msg = new Message() { Title = "", Error = false, Object = "" };
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             try
             {
-              
                 var add = new Posts();
                 add.Content =data.Content;
                 add.CreatedTime= DateTime.Now;
@@ -157,11 +156,8 @@ namespace FakeFacebook.Controllers.Post
                         _context.FileInformations.Add(addfile);
                         _context.SaveChanges();
 
-                        using var ms = new MemoryStream();
-                        await file.CopyToAsync(ms);
-                        var bytes = ms.ToArray();
                         string path = $"PostFile/{file?.FileName}";
-                        var filePath = await _githubUploader.UploadFileAsync(path, bytes, $"Upload {file?.FileName}");
+                        var filePath = await _githubUploader.UploadFileAsync(path, file!, $"Upload {file?.FileName}");
                
                     }
                 }
