@@ -21,6 +21,7 @@ namespace FakeFacebook.Controllers.AppUser
         private readonly IConfiguration _configuration;
         private readonly GitHubUploaderSevice _githubUploader;
         private readonly string? _getImageDataLink;
+        private readonly string? _foderSaveAvatarFile;
 
         public PersonalActionController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderSevice githubUploader)
         {
@@ -28,6 +29,7 @@ namespace FakeFacebook.Controllers.AppUser
             _configuration = configuration;
             _githubUploader = githubUploader;
             _getImageDataLink = configuration["Git:GetImageDataLink"];
+            _foderSaveAvatarFile = "Images/Avatar";
 
         }
 
@@ -141,7 +143,7 @@ namespace FakeFacebook.Controllers.AppUser
                                   b.Name,
                                   MutualFriend = d.CoutMutualFriend,
                                   Avatar = (b.Avatar == null) ?
-                                        $"{_getImageDataLink}/Images/Avatar/mostavatar.png" :
+                                        $"{_getImageDataLink}/{_foderSaveAvatarFile}/mostavatar.png" :
                                         $"{_getImageDataLink}/{b.Avatar}"
 
                               };
@@ -160,7 +162,7 @@ namespace FakeFacebook.Controllers.AppUser
                 {
                     if (infor.Avatar != null)
                     {
-                        string path = $"Images/Avatar/{infor.Avatar?.FileName}";
+                        string path = $"{_foderSaveAvatarFile}/{infor.Avatar?.FileName}";
                         msg.Object = await _githubUploader.UploadFileAsync(path, infor.Avatar!, $"Upload {infor.Avatar?.FileName}");
                         check.Avatar = path;
                         _context.SaveChanges();
@@ -330,7 +332,7 @@ namespace FakeFacebook.Controllers.AppUser
                                                                             || (x.UserCode2 == a.Id && x.UserCode1 == StaticUser)
                                                                             &&x.IsDeleted==false)?.Status,                                              
                            Avatar= (a.Avatar!=null)? $"{_getImageDataLink}/{a.Avatar}"
-                                                 : $"{_getImageDataLink}/Images/Avatar/mostavatar.png",
+                                                 : $"{_getImageDataLink}/{_foderSaveAvatarFile}/mostavatar.png",
                        }).ToList();
             var cout = new List<MutualFriend>();
             foreach (var item in user)
@@ -376,11 +378,8 @@ namespace FakeFacebook.Controllers.AppUser
 
         static bool ContainsCharIgnoreCaseAndDiacritics(string input, string character)
         {
-            // Chuẩn hóa chuỗi và ký tự để loại bỏ dấu
             string normalizedInput = RemoveDiacritics(input.ToLower());
             string normalizedCharacter = RemoveDiacritics(character.ToLower());
-
-            // Kiểm tra sự tồn tại của ký tự trong chuỗi
             return normalizedInput.Contains(normalizedCharacter);
         }
 
@@ -390,11 +389,7 @@ namespace FakeFacebook.Controllers.AppUser
             {
                 return text;
             }
-
-            // Chuẩn hóa thành dạng NFD (Normalization Form Decomposition)
             string normalizedText = text.Normalize(NormalizationForm.FormD);
-
-            // Loại bỏ các ký tự dấu (thuộc dải Unicode từ U+0300 đến U+036F)
             Regex regex = new Regex(@"\p{Mn}");
             return regex.Replace(normalizedText, string.Empty);
         }

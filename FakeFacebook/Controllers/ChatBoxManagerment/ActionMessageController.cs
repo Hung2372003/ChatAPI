@@ -3,7 +3,6 @@ using FakeFacebook.Data;
 using FakeFacebook.ModelViewControllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.OpenApi.Any;
 using System.Security.Claims;
 
 namespace FakeFacebook.Controllers.ChatBoxManagerment
@@ -57,7 +56,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                                     {
                                         GroupChatId = InforGroup.Id,
                                         GroupAvatar = (InforGroup.GroupDouble == false) ?
-                                                    $"{Request.Scheme}://{Request.Host}/{InforGroup.GroupAvartar}" :
+                                                    $"{_getImageDataLink}/{InforGroup.GroupAvartar}" :
                                                     ListUser[0].Avatar,
                                         GroupName = (InforGroup.GroupDouble == false) ? InforGroup.GroupName : ListUser[0].Name,
                                         ListUser = ListUser,

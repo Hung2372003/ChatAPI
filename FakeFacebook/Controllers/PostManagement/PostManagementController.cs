@@ -18,11 +18,13 @@ namespace FakeFacebook.Controllers.Post
         private readonly FakeFacebookDbContext _context;
         private readonly GitHubUploaderSevice _githubUploader;
         private readonly string? _getImageDataLink;
+        private readonly string? _foderSavePostFile;
         public PostManagementController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderSevice githubUploader)
         {
             _context = context;
             _githubUploader = githubUploader;
             _getImageDataLink = configuration["Git:GetImageDataLink"];
+            _foderSavePostFile = "PostFile";
         }
 
         [HttpGet("GetPost")]
@@ -147,7 +149,7 @@ namespace FakeFacebook.Controllers.Post
                     {
                         var addfile =new FileInformation();
                         addfile.Name = file.Name;
-                        addfile.Path = "PostFile/" + file.FileName;
+                        addfile.Path = $"{_foderSavePostFile}/{file.FileName}";
                         addfile.Type=file.ContentType;
                         addfile.Code = add.Id;
                         addfile.CreatedTime = DateTime.Now;

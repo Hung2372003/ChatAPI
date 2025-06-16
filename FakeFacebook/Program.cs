@@ -11,7 +11,8 @@ using FakeFacebook.Service;
 var builder = WebApplication.CreateBuilder(args);
 var key = builder.Configuration["JwtSettings:SecretKey"] ?? "2372003HungsssDepZaiSieuCapVuTru";
 
-if (builder.Environment.IsDevelopment()){
+if (builder.Environment.IsDevelopment())
+{
     builder.WebHost.UseUrls("https://0.0.0.0:7158", "http://0.0.0.0:5176");
     builder.WebHost.ConfigureKestrel(options =>
     {
@@ -21,7 +22,9 @@ if (builder.Environment.IsDevelopment()){
             listenOptions.UseHttps();
         });
     });
-} else {
+}
+else
+{
     var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
     builder.WebHost.ConfigureKestrel(options =>
@@ -33,7 +36,7 @@ builder.Services.AddCors(options => {
     options.AddPolicy("AllowSpecificOrigin",
         policy =>
         {
-            policy.WithOrigins( "http://localhost:4200",
+            policy.WithOrigins("http://localhost:4200",
                                 "https://117.6.106.251",
                                 "https://angular-chat-eta.vercel.app",
                                 "http://angular-chat-eta.vercel.app",
@@ -48,37 +51,40 @@ builder.Services.AddAuthentication(options => {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddJwtBearer(options => {
-        options.RequireHttpsMetadata = false;
-        options.SaveToken = true;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
-            //ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-            //ValidAudience = builder.Configuration["JwtSettings:Audience"],
-        };
-        options.Events = new JwtBearerEvents {
-            OnMessageReceived = context => {
-                var accessToken = context.Request.Query["access_token"];
-                if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hub")) {
-                    context.Token = accessToken;
-                }
-                return Task.CompletedTask;
-            },
-            OnChallenge = context => {
-                context.HandleResponse();
-                if (!context.HttpContext.User.Identity!.IsAuthenticated){
-                    context.Response.StatusCode = 401;
-                    context.Response.ContentType = "application/json";
-                    return context.Response.WriteAsync("{\"error\":\"Bạn cần đăng nhập để truy cập vào hệ thống.\"}");
-                }
-                return Task.CompletedTask;
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+        //ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+        //ValidAudience = builder.Configuration["JwtSettings:Audience"],
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context => {
+            var accessToken = context.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hub"))
+            {
+                context.Token = accessToken;
             }
-        };
-    });
+            return Task.CompletedTask;
+        },
+        OnChallenge = context => {
+            context.HandleResponse();
+            if (!context.HttpContext.User.Identity!.IsAuthenticated)
+            {
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+                return context.Response.WriteAsync("{\"error\":\"Bạn cần đăng nhập để truy cập vào hệ thống.\"}");
+            }
+            return Task.CompletedTask;
+        }
+    };
+});
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddAuthorization(options =>
@@ -139,7 +145,7 @@ app.UseSwaggerUI(c => {
     c.RoutePrefix = string.Empty;
 });
 app.UseDefaultFiles();
-if (app.Environment.IsDevelopment()){ app.UseHttpsRedirection();}
+if (app.Environment.IsDevelopment()) { app.UseHttpsRedirection(); }
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowSpecificOrigin");

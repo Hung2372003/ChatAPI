@@ -19,11 +19,17 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
         private readonly FakeFacebookDbContext _context;
         private readonly string? _getImageDataLink;
         private readonly GitHubUploaderSevice _githubUploader;
+        private readonly string? _foderSaveAvatarImage;
+        private readonly string? _foderSaveChatFile;
+        private readonly string? _foderSaveGroupAvatarImage;
         public ChatBoxController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderSevice githubUploader)
         {
             _context = context;
             _getImageDataLink = configuration["Git:GetImageDataLink"];
             _githubUploader = githubUploader;
+            _foderSaveAvatarImage = "Images/Avatar";
+            _foderSaveChatFile = "ChatBox";
+            _foderSaveGroupAvatarImage = "Images/GroupAvatar";
         }
 
         // Get------------------------------------------------------
@@ -51,7 +57,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                                     GroupChatId = a.Id,
                                     GroupName = a.GroupName,
                                     GroupAvatar = (a.GroupAvartar != null) ? $"{_getImageDataLink}/{a.GroupAvartar}" :
-                                                                         $"{_getImageDataLink}/Images/Avatar/mostavatar.png",
+                                                                         $"{_getImageDataLink}/{_foderSaveAvatarImage}/mostavatar.png",
                                     ListMember = (from x in _context.GroupMembers.Where(x => x.GroupChatId == a.Id && x.IsDeleted == false)
                                                   join y in _context.UserInformations
                                                   on x.MemberCode equals y.Id
@@ -71,7 +77,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                                                       g.Key.Name,
                                                       Avatar = (g.Key.Avatar != null) ?
                                                            $"{_getImageDataLink}/{g.Key.Avatar}"
-                                                           : $"{_getImageDataLink}/Images/Avatar/mostavatar.png"
+                                                           : $"{_getImageDataLink}/{_foderSaveAvatarImage}/mostavatar.png"
                                                   }).ToList(),
                                     GroupDouble = a.GroupDouble,
                                 };
@@ -327,12 +333,12 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                     chatContent.FileCode = chatContent.Id;
                     foreach (var file in FileUpload)
                     {
-                        string getDataLink = await _githubUploader.UploadFileAsync($"Chatbox/{file.FileName}", file, $"Upload {file.FileName}");
+                        string getDataLink = await _githubUploader.UploadFileAsync($"{_foderSaveChatFile}/{file.FileName}", file, $"Upload {file.FileName}");
                         var SaveFile = new FileChat();
                         SaveFile.FileCode = chatContent.FileCode;
                         SaveFile.Name = file.FileName;
                         SaveFile.CreatedTime = DateTime.Now;
-                        SaveFile.Path = "Chatbox/" + file.FileName;
+                        SaveFile.Path = $"{_foderSaveChatFile}/{file.FileName}";
                         SaveFile.Type = file.ContentType;
                         SaveFile.Size = file.Length;
                         SaveFile.IsDeleted = false;
@@ -373,7 +379,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                 ojb.ListUser?.Add(StaticUser);
 
                 var creatGroupChat = new ChatGroups();
-                creatGroupChat.GroupAvartar = (ojb.Avatar != null)?("Images/GroupAvatar/" + ojb.Avatar.FileName):null;
+                creatGroupChat.GroupAvartar = (ojb.Avatar != null)?($"{_foderSaveGroupAvatarImage}/{ojb.Avatar.FileName}"):null;
                 creatGroupChat.GroupDouble=false;
                 creatGroupChat.GroupName = ojb.GroupName;
                 creatGroupChat.CreatedBy = StaticUser;
@@ -385,7 +391,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
 
                 string avatarPath="";
                 if (ojb.Avatar != null) {
-                    avatarPath = await _githubUploader.UploadFileAsync($"Images/GroupAvatar/{ojb.Avatar.FileName}", ojb.Avatar, $"Upload {ojb.Avatar.FileName}");
+                    avatarPath = await _githubUploader.UploadFileAsync($"{ojb.Avatar.FileName}/{ojb.Avatar.FileName}", ojb.Avatar, $"Upload {ojb.Avatar.FileName}");
                 }
                 for (int i = 0; i < ojb.ListUser?.Count; i++)
                 {

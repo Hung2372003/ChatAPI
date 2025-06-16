@@ -17,12 +17,14 @@ namespace FakeFacebook.Controllers.AccountSecurity
         private readonly FakeFacebookDbContext _context;
         private readonly JwtTokenService _jwtService;
         private readonly GoogleAuthService _googleAuthService;
+        private readonly string _foderSaveAvatarImage;
 
         public UserSecurityController(IConfiguration configuration, FakeFacebookDbContext context, JwtTokenService jwtService,GoogleAuthService googleAuthService) {
             _key = configuration["JwtSettings:SecretKey"];
             _context = context;
             _jwtService = jwtService;
             _googleAuthService = googleAuthService;
+            _foderSaveAvatarImage = "Images/Avatar";
         }
 
         [HttpPost("UserLogin")]
@@ -76,7 +78,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 AddInfor.PhoneNumber= RegAcc.PhoneNumber;
                 AddInfor.Address = RegAcc.Address;
                 AddInfor.Birthday=(RegAcc.Birthday!="" && RegAcc.Birthday!= null) ? DateTimeOffset.Parse(RegAcc.Birthday, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal).UtcDateTime.Date:null;
-                AddInfor.Avatar= "/Images/Avatar/mostavatar.png";
+                AddInfor.Avatar= $"{_foderSaveAvatarImage}/mostavatar.png";
                 AddInfor.CreatedTime=DateTime.Now;
                 AddInfor.IsEncryption = true;
                 _context.UserInformations.Add(AddInfor);
@@ -115,7 +117,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
             return new JsonResult(msg);
 
         }
-        [HttpPost("google-login")]
+        [HttpPost("GoogleLogin")]
         public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
         {
             var msg=new Message();

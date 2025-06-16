@@ -13,11 +13,13 @@ namespace FakeFacebook.Controllers.AppUser
     {
         private readonly FakeFacebookDbContext _context;
         private readonly string? _getImageDataLink;
+        private readonly string? _foderSaveAvatarImage;
 
         public UserContactControllers(FakeFacebookDbContext context, IConfiguration configuration)
         {
             _context = context;
             _getImageDataLink = configuration["Git:GetImageDataLink"];
+            _foderSaveAvatarImage = "Images/Avatar";
         }
 
         [HttpGet("ListFrends")]
@@ -69,7 +71,7 @@ namespace FakeFacebook.Controllers.AppUser
                                  b.Name,
                                  MutualFriend=d.CoutMutualFriend,
                                  Path = (b.Avatar==null) ?
-                                       $"{_getImageDataLink}/Images/Avatar/mostavatar.png" :
+                                       $"{_getImageDataLink}/{_foderSaveAvatarImage}/mostavatar.png" :
                                        $"{_getImageDataLink}/{b.Avatar}"
 
                              };     
