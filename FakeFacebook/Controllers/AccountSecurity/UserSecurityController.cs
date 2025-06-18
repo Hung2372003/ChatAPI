@@ -73,7 +73,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 }
                 var AddInfor = new UserInformation();
                 AddInfor.IsDeleted = false;
-                AddInfor.Name = RegAcc.FirstName + " " + RegAcc.LastName;
+                AddInfor.Name = RegAcc.Name;
                 AddInfor.Email =RegAcc.Email;
                 AddInfor.PhoneNumber= RegAcc.PhoneNumber;
                 AddInfor.Address = RegAcc.Address;

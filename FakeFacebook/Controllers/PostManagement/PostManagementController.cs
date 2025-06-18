@@ -12,7 +12,7 @@ namespace FakeFacebook.Controllers.Post
 {
     [ApiController]
     [Route("api/PostManagement")]
-    //[Authorize]
+    [Authorize]
     public class PostManagementController:ControllerBase
     {
         private readonly FakeFacebookDbContext _context;
