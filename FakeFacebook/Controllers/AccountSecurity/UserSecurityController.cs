@@ -32,9 +32,9 @@ namespace FakeFacebook.Controllers.AccountSecurity
         {
             var msg = new Message() { Id=null,Title = "", Error = false, Object = "" };
             try {
-                loginModel.UserName =loginModel.UserName;
+                loginModel.Username = loginModel.Username;
                 loginModel.Password = loginModel.Password;
-                var CheckUser = _context.UserAccounts.FirstOrDefault(x => x.UserName == loginModel.UserName);
+                var CheckUser = _context.UserAccounts.FirstOrDefault(x => x.UserName == loginModel.Username);
                 if ( CheckUser!=null && CheckUser.UserPassword == loginModel.Password ) {
                     var token = _jwtService.GenerateJwtToken(CheckUser.UserCode, CheckUser?.Role ?? "User", CheckUser?.Permission ?? "NOT");
                     msg.Title = "Đăng nhập thành công";
@@ -45,11 +45,11 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 else if (  CheckUser != null && CheckUser.UserPassword != loginModel.Password)
                 {
                     msg.Error = true;
-                    msg.Title = "PassFalse";
+                    msg.Title = "Mật khẩu không chính xác";
                 }    
                 else {
                     msg.Error = true;
-                    msg.Title = "UserFalse";
+                    msg.Title = "Tài khoản không tồn tại";
                 }
             }
             catch(Exception e) {

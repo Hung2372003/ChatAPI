@@ -38,8 +38,7 @@ builder.Services.AddCors(options => {
         {
             policy.WithOrigins("http://localhost:4200",
                                 "https://117.6.106.251",
-                                "https://angular-chat-eta.vercel.app",
-                                "http://angular-chat-eta.vercel.app",
+                                "https://angular-fb-beta.vercel.app",
                                 "https://angular-fb-deploy.vercel.app")
                   .AllowAnyMethod()
                   .AllowAnyHeader()
@@ -96,7 +95,6 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    //c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Version = "v1",
@@ -142,10 +140,10 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI(c => {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-    c.RoutePrefix = string.Empty;
+    //c.RoutePrefix = string.Empty;
 });
 app.UseDefaultFiles();
-if (app.Environment.IsDevelopment()) { app.UseHttpsRedirection(); }
+//if (app.Environment.IsDevelopment()) { app.UseHttpsRedirection(); }
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowSpecificOrigin");
