@@ -117,7 +117,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 {
                     HttpOnly = true,
                     Secure = true, // dùng HTTPS
-                    SameSite = SameSiteMode.Strict,
+                    SameSite = SameSiteMode.Lax,
                     Expires = DateTimeOffset.UtcNow.AddHours(24)
                 });
                 msg.Id = AddAcc.UserCode;
