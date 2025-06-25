@@ -4,8 +4,11 @@ using FakeFacebook.Models;
 using FakeFacebook.ModelViewControllers;
 using FakeFacebook.ModelViewControllers.AccountSecurity;
 using FakeFacebook.Service;
+using Google.Apis.Auth;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
+using System.Text.Json;
 namespace FakeFacebook.Controllers.AccountSecurity
 {
     [ApiController]
@@ -18,13 +21,24 @@ namespace FakeFacebook.Controllers.AccountSecurity
         private readonly JwtTokenService _jwtService;
         private readonly GoogleAuthService _googleAuthService;
         private readonly string _foderSaveAvatarImage;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IConfiguration _config;
 
-        public UserSecurityController(IConfiguration configuration, FakeFacebookDbContext context, JwtTokenService jwtService,GoogleAuthService googleAuthService) {
+        public UserSecurityController(IConfiguration configuration, 
+                                      FakeFacebookDbContext context, 
+                                      JwtTokenService jwtService,
+                                      GoogleAuthService googleAuthService,
+                                      IHttpClientFactory httpClientFactory,
+                                      IConfiguration config
+                                      ) {
+            _config = config;
             _key = configuration["JwtSettings:SecretKey"];
             _context = context;
             _jwtService = jwtService;
             _googleAuthService = googleAuthService;
             _foderSaveAvatarImage = "Images/Avatar";
+            _httpClientFactory = httpClientFactory;
+
         }
 
         [HttpPost("UserLogin")]
@@ -99,15 +113,15 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 _context.SaveChanges();
 
                 var token = _jwtService.GenerateJwtToken(AddAcc.UserCode, AddAcc.Role, AddAcc.Permission);
-                Response.Cookies.Append("token", token, new CookieOptions
+                Response.Cookies.Append("access_token", token, new CookieOptions
                 {
-                    HttpOnly = false, 
-                    Secure = false,   
-                    SameSite = SameSiteMode.None, 
+                    HttpOnly = true,
+                    Secure = false, // dùng HTTPS
+                    SameSite = SameSiteMode.Strict,
                     Expires = DateTimeOffset.UtcNow.AddHours(24)
                 });
-                msg.Object = token;
-                msg.Id = AddAcc.UserCode;            
+                msg.Id = AddAcc.UserCode;
+                msg.Title = "Đăng ký tài khoản thành công";
             }
             catch (Exception e) 
             {
@@ -117,32 +131,42 @@ namespace FakeFacebook.Controllers.AccountSecurity
             return new JsonResult(msg);
 
         }
-        [HttpPost("GoogleLogin")]
-        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+        [HttpPost("GoogleExchangeCode")]
+        public async Task<IActionResult> GoogleExchangeCode([FromBody] GoogleAuthRequest request)
         {
-            var msg=new Message();
-            try
-            {
-                var payload = await _googleAuthService.VerifyGoogleTokenAsync(request.IdToken!);
+            var msg = new Message() { Id = null, Title = "", Error = false, Object = "" };
+            var clientId = _config["GoogleAuth:IDClientCode"]!;
+            var clientSecret = _config["GoogleAuth:ClientSecretCode"]!;
+            var redirectUri = _config["GoogleAuth:RedirectUri"]!; // Phải khớp 100% với URI gửi lên Google
 
-                // TODO: kiểm tra email, tạo user trong hệ thống nếu cần
-                // Tạo JWT token hệ thống bạn
-                if (payload != null)
-                {
-                    msg.Object = payload;
+            var values = new Dictionary<string, string>{
+                { "code", request.Code! },
+                { "client_id", clientId },
+                { "client_secret", clientSecret },
+                { "redirect_uri", redirectUri },
+                { "grant_type", "authorization_code" }
+            };
+            try { 
+                var client = _httpClientFactory.CreateClient();
+                var response = await client.PostAsync("https://oauth2.googleapis.com/token", new FormUrlEncodedContent(values));
+                var json = await response.Content.ReadAsStringAsync();
+                if (!response.IsSuccessStatusCode)
+                {            
+                    return BadRequest(new { error = true, message = "Không thể lấy token từ Google", raw = json });
                 }
-                else {
-                    msg.Title = "Token không hợp lệ";
-                    msg.Error = true;
-                }
+
+                var tokenData = JsonSerializer.Deserialize<GoogleTokenResponse>(json);
+                var payload = await GoogleJsonWebSignature.ValidateAsync(tokenData?.id_token);
+
+                msg.Title = "Đăng nhập thành công";
+                msg.Object = payload;
             }
-            catch (Exception ex)
-            {
-               msg.Error=true;
-               msg.Title= "có lỗi xảy ra:"+ex.Message;
+            catch (Exception e) {
+                msg.Title = e.Message;
+                msg.Error = true;
             }
             return Ok(msg);
-        }
 
+        }
     }
 }

@@ -10,7 +10,6 @@ using FakeFacebook.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 var key = builder.Configuration["JwtSettings:SecretKey"] ?? "2372003HungsssDepZaiSieuCapVuTru";
-
 if (builder.Environment.IsDevelopment())
 {
     builder.WebHost.UseUrls("https://0.0.0.0:7158", "http://0.0.0.0:5176");
@@ -22,9 +21,7 @@ if (builder.Environment.IsDevelopment())
             listenOptions.UseHttps();
         });
     });
-}
-else
-{
+} else {
     var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
     builder.WebHost.ConfigureKestrel(options =>
@@ -37,18 +34,20 @@ builder.Services.AddCors(options => {
         policy =>
         {
             policy.WithOrigins("http://localhost:4200",
-                                "https://117.6.106.251",
                                 "https://angular-fb-beta.vercel.app",
                                 "https://angular-fb-deploy.vercel.app")
-                  .AllowAnyMethod()
+                  .AllowCredentials()
                   .AllowAnyHeader()
-                  .AllowCredentials();
+                  .AllowAnyMethod()
+                 ;
         });
 });
 builder.Services.AddSignalR();
 builder.Services.AddAuthentication(options => {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = "Cookies";
+    options.DefaultChallengeScheme = "Google";
 }).AddJwtBearer(options => {
     options.RequireHttpsMetadata = false;
     options.SaveToken = true;
@@ -83,7 +82,7 @@ builder.Services.AddAuthentication(options => {
             return Task.CompletedTask;
         }
     };
-});
+ });
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddAuthorization(options =>
@@ -136,6 +135,7 @@ builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlSe
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient<GitHubUploaderSevice>();
+
 var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI(c => {
@@ -155,5 +155,3 @@ app.Run();
 //Tools > NuGet Package Manager > Package Manager Console
 //Add-Migration InitialCreate
 //Update-Database
-//29577
-//44334
