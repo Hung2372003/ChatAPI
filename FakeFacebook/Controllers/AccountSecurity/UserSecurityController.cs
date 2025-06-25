@@ -116,7 +116,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 Response.Cookies.Append("access_token", token, new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = false, // dùng HTTPS
+                    Secure = true, // dùng HTTPS
                     SameSite = SameSiteMode.Strict,
                     Expires = DateTimeOffset.UtcNow.AddHours(24)
                 });
