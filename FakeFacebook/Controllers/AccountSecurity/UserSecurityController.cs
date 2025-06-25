@@ -50,7 +50,14 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 loginModel.Password = loginModel.Password;
                 var CheckUser = _context.UserAccounts.FirstOrDefault(x => x.UserName == loginModel.Username);
                 if ( CheckUser!=null && CheckUser.UserPassword == loginModel.Password ) {
-                    var token = _jwtService.GenerateJwtToken(CheckUser.UserCode, CheckUser?.Role ?? "User", CheckUser?.Permission ?? "NOT");
+                    var token = _jwtService.GenerateJwtToken(CheckUser.UserCode, CheckUser?.Role ?? "User", CheckUser?.Permission ?? "NOT")
+                    Response.Cookies.Append("access_token", token, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = false, // dùng HTTPS
+                        SameSite = SameSiteMode.Lax,
+                        Expires = DateTimeOffset.UtcNow.AddHours(24)
+                    });
                     msg.Title = "Đăng nhập thành công";
                     msg.Object = token;
                     msg.Id = CheckUser?.UserCode;
@@ -116,12 +123,13 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 Response.Cookies.Append("access_token", token, new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = true, // dùng HTTPS
+                    Secure = false, // dùng HTTPS
                     SameSite = SameSiteMode.Lax,
                     Expires = DateTimeOffset.UtcNow.AddHours(24)
                 });
                 msg.Id = AddAcc.UserCode;
                 msg.Title = "Đăng ký tài khoản thành công";
+                msg.Object = token;
             }
             catch (Exception e) 
             {
