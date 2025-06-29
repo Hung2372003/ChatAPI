@@ -27,6 +27,7 @@ namespace FakeFacebook.Controllers.Post
             _foderSavePostFile = "PostFile";
         }
 
+        [Authorize]
         [HttpGet("GetPost")]
         public IActionResult GetPost()
         {
@@ -100,6 +101,7 @@ namespace FakeFacebook.Controllers.Post
             return new JsonResult(msg);
 
         }
+        [Authorize]
         [HttpPost("GetPostComment")]
         public IActionResult GetPostComment([FromBody] int id) {
             var msg = new Message() { Title = "", Error = false, Object = "" };
@@ -127,7 +129,9 @@ namespace FakeFacebook.Controllers.Post
             return new JsonResult(msg);
         }
 
+
        [HttpPost("AddNewPost")]
+       [Authorize]
         public async Task<IActionResult> AddNewPost([FromForm] PostManagementModelViews data)
         {
             var msg = new Message() { Title = "", Error = false, Object = "" };
@@ -177,6 +181,7 @@ namespace FakeFacebook.Controllers.Post
         }
 
         [HttpDelete("DeletePost")]
+        [Authorize]
         public IActionResult DeletePost(int Id)
         {
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
@@ -211,6 +216,7 @@ namespace FakeFacebook.Controllers.Post
             return new JsonResult(msg);
         }
         [HttpPost("AddComment")]
+        [Authorize]
         public JsonResult AddComment(CommentModelViews data)
         {
             var msg = new Message() { Title = "", Error = false, Object = "" };
@@ -261,6 +267,7 @@ namespace FakeFacebook.Controllers.Post
         }
 
         [HttpPost("FeelPost")]
+        [Authorize]
         public JsonResult FeelPost([FromBody] int id)
         {
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
