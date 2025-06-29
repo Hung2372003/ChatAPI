@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using System;
+﻿using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -14,6 +12,7 @@ namespace FakeFacebook.Service
         {
             _configuration = configuration;
         }
+
 
         public string GenerateJwtToken(int userId, string role, string permission)
         {
@@ -30,10 +29,10 @@ namespace FakeFacebook.Service
             // Khởi tạo Claims
             var claims = new[]
             {
-            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-            new Claim(ClaimTypes.Role, role),
-            new Claim("Permission", permission)
-        };
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+                new Claim(ClaimTypes.Role, role),
+                new Claim("Permission", permission)
+            };
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {

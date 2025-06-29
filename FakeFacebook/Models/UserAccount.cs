@@ -20,5 +20,7 @@ namespace FakeFacebook.Models
         public bool? IsEncryption { get; set; }
         public string? Role { get; set; }
         public string? Permission { get; set; }
+        public string? Provider { get; set; }
+        public string? ProviderSub { get; set; }
     }
 }

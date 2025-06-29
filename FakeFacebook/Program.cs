@@ -43,13 +43,14 @@ builder.Services.AddCors(options => {
         });
 });
 builder.Services.AddSignalR();
-builder.Services.AddAuthentication(options => {
+builder.Services.AddAuthentication(options =>
+{
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultScheme = "Cookies";
-    options.DefaultChallengeScheme = "Google";
-}).AddJwtBearer(options => {
-    options.RequireHttpsMetadata = false;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false; // có thể bật true khi dùng HTTPS
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -58,31 +59,48 @@ builder.Services.AddAuthentication(options => {
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
-        //ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-        //ValidAudience = builder.Configuration["JwtSettings:Audience"],
     };
     options.Events = new JwtBearerEvents
     {
-        OnMessageReceived = context => {
+        OnMessageReceived = context =>
+        {
             var accessToken = context.Request.Query["access_token"];
-            if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hub"))
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hub"))
             {
                 context.Token = accessToken;
             }
-            return Task.CompletedTask;
-        },
-        OnChallenge = context => {
-            context.HandleResponse();
-            if (!context.HttpContext.User.Identity!.IsAuthenticated)
+            else if (context.Request.Headers.ContainsKey("Authorization"))
             {
-                context.Response.StatusCode = 401;
-                context.Response.ContentType = "application/json";
-                return context.Response.WriteAsync("{\"error\":\"Bạn cần đăng nhập để truy cập vào hệ thống.\"}");
+                // Ưu tiên lấy token từ Authorization header
+                var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+                if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+                {
+                    context.Token = authHeader["Bearer ".Length..].Trim();
+                }
+              
+            }
+            else
+            {
+                // Nếu không có header, lấy từ cookie
+                var tokenFromCookie = context.Request.Cookies["access_token"];
+                if (!string.IsNullOrEmpty(tokenFromCookie))
+                {
+                    context.Token = tokenFromCookie;
+                }
             }
             return Task.CompletedTask;
+        },
+        OnChallenge = context =>
+        {
+            context.HandleResponse();
+            context.Response.StatusCode = 401;
+            context.Response.ContentType = "application/json";
+            return context.Response.WriteAsync("{\"error\":\"Bạn cần đăng nhập để truy cập vào hệ thống.\"}");
         }
     };
- });
+});
+
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddAuthorization(options =>
