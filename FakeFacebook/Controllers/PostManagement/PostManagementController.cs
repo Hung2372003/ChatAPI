@@ -127,7 +127,7 @@ namespace FakeFacebook.Controllers.Post
             return new JsonResult(msg);
         }
 
-        [HttpPost("AddNewPost")]
+       [HttpPost("AddNewPost")]
         public async Task<IActionResult> AddNewPost([FromForm] PostManagementModelViews data)
         {
             var msg = new Message() { Title = "", Error = false, Object = "" };
@@ -176,7 +176,6 @@ namespace FakeFacebook.Controllers.Post
             return new JsonResult(msg);
         }
 
-        [Authorize]
         [HttpDelete("DeletePost")]
         public IActionResult DeletePost(int Id)
         {
