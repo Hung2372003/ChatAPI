@@ -176,7 +176,41 @@ namespace FakeFacebook.Controllers.Post
             return new JsonResult(msg);
         }
 
+        [Authorize]
+        [HttpDelete("DeletePost")]
+        public IActionResult DeletePost(int Id)
+        {
+            var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var msg = new Message() { Title = "", Error = false, Object = "" };
+            try
+            {
+                var check =_context.Posts.FirstOrDefault(x=>x.IsDeleted==false && x.Id==Id);
+                if (check != null && check.CreatedBy == StaticUser)
+                {
+                    check.IsDeleted = true;
+                    _context.Posts.Update(check);
+                    _context.SaveChanges();
+                    msg.Title = "Xóa bài đăng thành công";
 
+                }
+                else if(check != null && check.CreatedBy != StaticUser )
+                {
+                    msg.Error = true;
+                    msg.Title = "Bạn không có quyền xóa bài đăng này";
+                   
+                }
+                else
+                {
+                    msg.Error = true;
+                    msg.Title = "Không tìm thấy bài đăng hoặc đã bị xóa";
+                }
+            }
+            catch(Exception e) {
+                msg.Error=true;
+                msg.Title="Có lỗi xảy ra khi xóa:" + e.Message;
+            }
+            return new JsonResult(msg);
+        }
         [HttpPost("AddComment")]
         public JsonResult AddComment(CommentModelViews data)
         {
