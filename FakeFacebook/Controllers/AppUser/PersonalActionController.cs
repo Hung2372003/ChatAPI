@@ -172,7 +172,7 @@ namespace FakeFacebook.Controllers.AppUser
                     check.Name = (infor.Name != "" && infor.Name != null) ? infor.Name : check.Name;
                     check.PhoneNumber = (infor.PhoneNumber != "" && infor.PhoneNumber != null) ? infor.PhoneNumber : check.PhoneNumber;
                     check.Address = (infor.Address != "" && infor.Address != null) ? infor.Address : check.Address;
-                    check.UpdatedTime = DateTime.Now;
+                    check.UpdatedTime = DateTime.UtcNow;
                     check.UpdatedBy = StaticUser;
                     _context.SaveChanges();
                     msg.Object = new

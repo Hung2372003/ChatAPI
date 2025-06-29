@@ -136,7 +136,7 @@ namespace FakeFacebook.Controllers.Post
             {
                 var add = new Posts();
                 add.Content =data.Content;
-                add.CreatedTime= DateTime.Now;
+                add.CreatedTime= DateTime.UtcNow;
                 add.CreatedBy = StaticUser;
                 add.Status=data.Status;
                 add.IsDeleted = false;
@@ -152,7 +152,7 @@ namespace FakeFacebook.Controllers.Post
                         addfile.Path = $"{_foderSavePostFile}/{file.FileName}";
                         addfile.Type=file.ContentType;
                         addfile.Code = add.Id;
-                        addfile.CreatedTime = DateTime.Now;
+                        addfile.CreatedTime = DateTime.UtcNow;
                         addfile.CreatedBy = StaticUser;
                         addfile.IsDeleted = false;
                         _context.FileInformations.Add(addfile);
@@ -193,7 +193,7 @@ namespace FakeFacebook.Controllers.Post
                 addNew.Content = data.Content;
                 addNew.CreatedBy = StaticUser;
                 addNew.IsDeleted = false;
-                addNew.CreatedTime = DateTime.Now;
+                addNew.CreatedTime = DateTime.UtcNow;
 
                 _context.PostComments.Add(addNew);
                 _context.SaveChanges();

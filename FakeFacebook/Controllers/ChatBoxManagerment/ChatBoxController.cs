@@ -129,7 +129,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                         var addGroup = new ChatGroups();
                         addGroup.GroupDouble = true;
                         addGroup.CreatedBy = StaticUser;
-                        addGroup.CreatedTime = DateTime.Now;
+                        addGroup.CreatedTime = DateTime.UtcNow;
                         addGroup.Quantity = 2;
                         addGroup.IsDeleted = false;
                         _context.Add(addGroup);
@@ -139,7 +139,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                         addMember1.GroupChatId = addGroup.Id;
                         addMember1.MemberCode = StaticUser;
                         addMember1.IsDeleted = false;
-                        addMember1.InvitedTime = DateTime.Now;
+                        addMember1.InvitedTime = DateTime.UtcNow;
                         addMember1.InvitedBy = StaticUser;
                         _context.Add(addMember1);
                      
@@ -148,7 +148,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                         addMember2.GroupChatId = addGroup.Id;
                         addMember2.MemberCode = data.UserCode;
                         addMember2.InvitedBy = StaticUser;
-                        addMember2.InvitedTime = DateTime.Now;
+                        addMember2.InvitedTime = DateTime.UtcNow;
                         addMember2.IsDeleted = false;
                         _context.Add(addMember2);
                         _context.SaveChanges();
@@ -323,7 +323,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                 chatContent.CreatedBy = StaticUser;
                 chatContent.Content = ojb.Content;
                 chatContent.GroupChatId = ojb.GroupChatId;
-                chatContent.CreatedTime = DateTime.Now;
+                chatContent.CreatedTime = DateTime.UtcNow;
                 _context.ChatContents.Add(chatContent);
                 _context.SaveChanges();
 
@@ -337,7 +337,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                         var SaveFile = new FileChat();
                         SaveFile.FileCode = chatContent.FileCode;
                         SaveFile.Name = file.FileName;
-                        SaveFile.CreatedTime = DateTime.Now;
+                        SaveFile.CreatedTime = DateTime.UtcNow;
                         SaveFile.Path = $"{_foderSaveChatFile}/{file.FileName}";
                         SaveFile.Type = file.ContentType;
                         SaveFile.Size = file.Length;
@@ -383,7 +383,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                 creatGroupChat.GroupDouble=false;
                 creatGroupChat.GroupName = ojb.GroupName;
                 creatGroupChat.CreatedBy = StaticUser;
-                creatGroupChat.CreatedTime = DateTime.Now;
+                creatGroupChat.CreatedTime = DateTime.UtcNow;
                 creatGroupChat.IsDeleted = false;
                 creatGroupChat.Quantity = ojb.ListUser?.Count;
                 _context.ChatGroups.Add(creatGroupChat);
@@ -400,7 +400,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                     addMember.MemberCode = ojb.ListUser[i];
                     addMember.IsDeleted = false;
                     addMember.Status = ojb.ListUser[i]==StaticUser ? addMember.Status=true : addMember.Status=false;
-                    addMember.InvitedTime = DateTime.Now;
+                    addMember.InvitedTime = DateTime.UtcNow;
                     addMember.InvitedBy = StaticUser;
                     _context.Add(addMember);
                     _context.SaveChanges();     

@@ -99,7 +99,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 AddInfor.Address = RegAcc.Address;
                 AddInfor.Birthday=(RegAcc.Birthday!="" && RegAcc.Birthday!= null) ? DateTimeOffset.Parse(RegAcc.Birthday, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal).UtcDateTime.Date:null;
                 AddInfor.Avatar= $"{_foderSaveAvatarImage}/mostavatar.png";
-                AddInfor.CreatedTime=DateTime.Now;
+                AddInfor.CreatedTime=DateTime.UtcNow;
                 AddInfor.IsEncryption = true;
                 _context.UserInformations.Add(AddInfor);
                 _context.SaveChanges();
@@ -109,8 +109,8 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 AddAcc.IsDeleted = false;
                 AddAcc.UserName = RegAcc.UserAccount;
                 AddAcc.UserPassword = RegAcc.Password;
-                AddAcc.CreatedTime = DateTime.Now;
-                AddAcc.UpdatedTime= DateTime.Now;
+                AddAcc.CreatedTime = DateTime.UtcNow;
+                AddAcc.UpdatedTime= DateTime.UtcNow;
                 AddAcc.CreatedBy = AddInfor.Id;
                 AddAcc.IsEncryption = true;
                 AddAcc.Role = "User";
@@ -196,7 +196,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
                     AddInfor.Name = payload.Name;
                     AddInfor.Email = payload.Email;
                     AddInfor.Avatar = $"{_foderSaveAvatarImage}/mostavatar.png";
-                    AddInfor.CreatedTime = DateTime.Now;
+                    AddInfor.CreatedTime = DateTime.UtcNow;
                     AddInfor.IsEncryption = true;
                     _context.UserInformations.Add(AddInfor);
                     _context.SaveChanges();
@@ -205,7 +205,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
                     AddAcc.UserCode = AddInfor.Id;
                     AddAcc.IsDeleted = false;
                     AddAcc.UserName = payload.Email;
-                    AddAcc.CreatedTime = DateTime.Now;
+                    AddAcc.CreatedTime = DateTime.UtcNow;
                     AddAcc.CreatedBy = AddInfor.Id;
                     AddAcc.Provider = "Google";
                     AddAcc.ProviderSub = payload.Subject;
