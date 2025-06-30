@@ -241,8 +241,8 @@ namespace FakeFacebook.Controllers.AppUser
             return new JsonResult(msg);
         }
 
-        [HttpPost("FriendAccept")]
-        public IActionResult FriendAccept([FromBody] int FriendCode)
+        [HttpPatch("FriendAccept")]
+        public IActionResult FriendAccept(int FriendCode)
         {
             var msg = new Message() { Title = "", Error = false, Object = "" };
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
@@ -271,8 +271,8 @@ namespace FakeFacebook.Controllers.AppUser
             return new JsonResult(msg);
         }
 
-        [HttpPost("Unfriend")]
-        public IActionResult Unfriend([FromBody] int FriendCode) {
+        [HttpDelete("Unfriend")]
+        public IActionResult Unfriend(int FriendCode) {
 
             var msg = new Message() { Title = "", Error = false, Object = "" };
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);

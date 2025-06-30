@@ -79,6 +79,6 @@ namespace FakeFacebook.Controllers.AppUser
             return new JsonResult(ListFriends.ToList());   
         }
 
-       
+
     }
 }

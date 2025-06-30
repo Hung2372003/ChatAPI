@@ -90,7 +90,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             return new JsonResult(msg);
         }
 
-        [HttpPost("SetStatusReadMessage")]
+        [HttpPatch("SetStatusReadMessage")]
         public JsonResult SetStatusReadMessage([FromBody] int GroupChatId)
         {
             var msg = new Message() { Title = "", Error = false, Object = "" };

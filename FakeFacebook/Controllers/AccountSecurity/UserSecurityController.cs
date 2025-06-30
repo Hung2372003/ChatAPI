@@ -259,14 +259,17 @@ namespace FakeFacebook.Controllers.AccountSecurity
         [HttpPost("Logout")]
         public IActionResult Logout()
         {
-            Response.Cookies.Delete("access_token", new CookieOptions
+            Response.Cookies.Append("access_token", "", new CookieOptions
             {
+                Expires = DateTimeOffset.UtcNow.AddDays(-1),
                 HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Lax,
+                Secure = false, // nên dùng true nếu backend có HTTPS
+                SameSite = SameSiteMode.Lax
             });
+
             return Ok(new { Message = "Đăng xuất thành công" });
         }
+
 
 
     }

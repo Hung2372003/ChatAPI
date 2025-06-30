@@ -7,6 +7,7 @@ using FakeFacebook.ModelViewControllers.ChatBoxManagerment;
 using FakeFacebook.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.WebSockets;
 using System.Security.Claims;
 
 
@@ -42,7 +43,6 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
 
         [HttpGet("GetGroupChat")]
         [Authorize]
-
         public JsonResult GetGroupChat()
         {
             var msg = new Message { Id = 0, Error = false, Title = "", Object = "" };
@@ -180,7 +180,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                             msg.Title = "NotMess";
                             return new JsonResult(msg);
                         }
-                        var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == GroupChatId).OrderByDescending(x => x.Id)
+                        var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == GroupChatId).OrderByDescending(x => x.Id).Skip((data.PageSize - 1) * data.PageSize).Take(data.PageSize)
                                    join b in _context.FileChats on a.FileCode equals b.FileCode into b1
                                    from b in b1.DefaultIfEmpty()
                                    group new {a,b}
@@ -242,7 +242,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                     }
                     _context.SaveChanges();
 
-                    var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId).OrderByDescending(x => x.Id)
+                    var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId && x.Id >= data.MessId).OrderByDescending(x => x.Id)
                                join b in _context.FileChats on a.FileCode equals b.FileCode into b1
                                from b in b1.DefaultIfEmpty()
                                group new { a, b }
@@ -296,7 +296,6 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
         }
      
         [HttpPost("UpdateMessage")]
-        //[RequestSizeLimit(50 * 1024 * 1024)] // 50MB
         [Authorize]
         public async Task<IActionResult> UpdateMessage([FromForm] ChatBoxModelViews ojb, [FromForm] List<IFormFile> FileUpload)
         {
@@ -424,10 +423,10 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             }
             return new JsonResult(msg);
         }
-        // Post-----------------------------------------------------
-        [HttpPost("GetFileChat")]
+
+        [HttpGet("GetFileChat")]
         [Authorize]
-        public JsonResult GetFileChat([FromBody] int groupChatId)
+        public JsonResult GetFileChat(int groupChatId)
         {
             var msg = new Message { Id = 0, Error = false, Title = "", Object = "" };
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
@@ -457,8 +456,10 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             return new JsonResult(msg);
         }
 
-        [HttpPost("SetStatusMess")]
-        public JsonResult SetStatusMess([FromBody] int groupChatId)
+
+        [HttpPatch("SetStatusMess")]
+        [Authorize]
+        public JsonResult SetStatusMess(int groupChatId)
         {
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             var msg = new Message{ Error = false, Title = "",Object="" };
@@ -483,8 +484,30 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             return new JsonResult(msg);
         }
 
+        [HttpGet("GetUnreadMessageCount")]
+        [Authorize]
+        public IActionResult GetUnreadMessageCount()
+        {
+            var userId = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            try
+            {
+                var count = _context.GroupMembers
+                    .Where(x => !x.IsDeleted && x.MemberCode == userId && x.Status == false)
+                    .Count();
+
+                return Ok(new { Count = count });
+            }
+            catch (Exception ex)
+            {
+
+                return StatusCode(500, new { Message = "Internal Server Error" +ex });
+            }
+        }
+
+
+
     }
 
-  
+
 
 }
