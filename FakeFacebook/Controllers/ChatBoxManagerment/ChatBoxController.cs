@@ -180,7 +180,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                             msg.Title = "NotMess";
                             return new JsonResult(msg);
                         }
-                        var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == GroupChatId).OrderByDescending(x => x.Id).Skip((data.PageSize - 1) * data.PageSize).Take(data.PageSize)
+                        var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == GroupChatId).OrderByDescending(x => x.Id)
                                    join b in _context.FileChats on a.FileCode equals b.FileCode into b1
                                    from b in b1.DefaultIfEmpty()
                                    group new {a,b}
