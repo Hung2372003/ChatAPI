@@ -23,7 +23,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
         [HttpGet("GetAllMessageGroups")]
         public JsonResult GetAllMessageGroups()
         {
-            var msg = new Message() { Title = "", Error = false, Object ="" };
+            var msg = new Message() { Title = "", Error = false, Object = new List<NewMessageEachGroupModelViews> { } };
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             try
             {

@@ -283,8 +283,14 @@ namespace FakeFacebook.Controllers.Post
                 var post = _context.Posts.FirstOrDefault(x => x.Id == data.PostCode && x.IsDeleted == false);
                 if (check != null && post != null)
                 {
-
-                    check.Feeling = data.Feeling;
+                    if(check.Feeling == data.Feeling)
+                    {
+                        check.Feeling = null;
+                    }
+                    else
+                    {
+                        check.Feeling = data.Feeling;
+                    }
                     _context.SaveChanges();
                 }
                 else

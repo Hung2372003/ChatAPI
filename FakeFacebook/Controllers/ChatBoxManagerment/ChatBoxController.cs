@@ -153,7 +153,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                         _context.Add(addMember2);
                         _context.SaveChanges();
 
-                        msg.Object = new { 
+                        msg.PreventiveObject = new { 
                             GroupChatId=addGroup.Id,
                             GroupDouble=addGroup.GroupDouble
                         };
@@ -173,7 +173,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                         var checkContent = _context.ChatContents.FirstOrDefault(x => x.GroupChatId == GroupChatId)?.Id;
                         if (checkContent == null)
                         {
-                            msg.Object = new {
+                            msg.PreventiveObject = new {
                                 GroupChatId = GroupChatId,
                                 GroupDouble = true
                             };
@@ -227,7 +227,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                     var checkContent = _context.ChatContents.FirstOrDefault(x => x.GroupChatId == data.GroupChatId)?.Id;
                     if (checkContent == null)
                     {
-                        msg.Object = new { 
+                        msg.PreventiveObject = new { 
                             GroupChatId=data.GroupChatId,
                             GroupDouble=_context.ChatGroups.FirstOrDefault(x=>x.Id==data.GroupChatId)?.GroupDouble
                         };

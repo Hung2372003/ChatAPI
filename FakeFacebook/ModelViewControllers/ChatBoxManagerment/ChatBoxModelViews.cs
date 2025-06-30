@@ -10,7 +10,7 @@
         public int? UserCode { get;set; }
         public int? GroupChatId { get; set; }
         public int? MessId { get; set; }
-        public int PageSize { get; set; }
+        //public int PageSize { get; set; }
 
     }
     public class FileChatModelViews

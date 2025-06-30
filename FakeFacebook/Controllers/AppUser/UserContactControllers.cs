@@ -27,7 +27,6 @@ namespace FakeFacebook.Controllers.AppUser
         public JsonResult GetListFriends() {
             //var check = HttpContext.User.Identity.Name;
             var check = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-
             var friends = from a in _context.FriendDoubles.Where(x => (x.UserCode1 == check 
                                                                 || x.UserCode2 == check)
                                                                 && x.IsDeleted == false 
