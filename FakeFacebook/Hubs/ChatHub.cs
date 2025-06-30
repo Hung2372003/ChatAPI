@@ -70,6 +70,19 @@ public class ChatHub : Hub
 
     }
 
+    public async Task SendNotificationToGroup(string Notification, string GroupId)
+    {
+        try
+        {
+            var UserCode = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            await Clients.Group(GroupId).SendAsync("ReceiveNotification", Notification);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in SendMessageToGroup: {ex.Message}");
+            throw;
+        }
+    }
     public async Task SendLikeStatus( int PostId ,bool Like)
     {
         try

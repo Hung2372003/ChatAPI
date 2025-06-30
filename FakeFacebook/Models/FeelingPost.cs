@@ -9,6 +9,6 @@ namespace FakeFacebook.Models
         public int Id { get; set; }
         public int PostId { get; set; }
         public int CreatedBy { get; set; }
-        public bool Like { get; set; }
+        public string? Feeling { get; set; }
     }
 }

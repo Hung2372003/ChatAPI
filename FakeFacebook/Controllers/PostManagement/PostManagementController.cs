@@ -53,7 +53,7 @@ namespace FakeFacebook.Controllers.Post
                                        a.Status,
                                        a.CommentNumber,
                                        a.LikeNumber,
-                                       Like = (_context.FeelingPosts.FirstOrDefault(x=>x.CreatedBy==StaticUser && x.PostId==a.Id)!.Like == true)?true:false,
+                                       //Like = (_context.FeelingPosts.FirstOrDefault(x=>x.CreatedBy==StaticUser && x.PostId==a.Id)!.Like == true)?true:false,
                                        b.Name,
                                        Avatar = _getImageDataLink + "/" + b.Avatar,
 
@@ -67,7 +67,7 @@ namespace FakeFacebook.Controllers.Post
                                    e.Key.Status,
                                    e.Key.LikeNumber,
                                    e.Key.CommentNumber,
-                                   e.Key.Like,
+                                   //e.Key.Like,
                                    e.Key.Avatar,
                                    e.Key.Name,
                                    ListFile = e.Where(x => x.g != null).Select(x => new
@@ -268,44 +268,36 @@ namespace FakeFacebook.Controllers.Post
 
         [HttpPost("FeelPost")]
         [Authorize]
-        public JsonResult FeelPost([FromBody] int id)
+        public IActionResult FeelPost([FromBody]  FeelPostModelViews data)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             var msg = new Message() { Title = "", Error = false, Object = "" };
             try
             {
-                var check = _context.FeelingPosts.FirstOrDefault(x => x.CreatedBy == StaticUser && x.PostId == id);
-                var post = _context.Posts.FirstOrDefault(x => x.Id == id);
+                var check = _context.FeelingPosts.FirstOrDefault(x => x.CreatedBy == StaticUser && x.PostId == data.PostCode);
+                var post = _context.Posts.FirstOrDefault(x => x.Id == data.PostCode && x.IsDeleted == false);
                 if (check != null && post != null)
                 {
-                    check.Like = !check.Like;
-                    _context.SaveChanges();
-              
-                    if (check.Like == true)
-                    {
-                        post.LikeNumber = post.LikeNumber + 1;
-                    }
-                    else
-                    {               
-                        post.LikeNumber = post.LikeNumber - 1;
-                    }
+
+                    check.Feeling = data.Feeling;
                     _context.SaveChanges();
                 }
                 else
                 {                 
                     var add = new FeelingPost();
-                    add.PostId = id;
-                    add.Like = true;
+                    add.PostId = data.PostCode;
+                    add.Feeling = data.Feeling;
                     add.CreatedBy = StaticUser;
-                    _context.FeelingPosts.Add(add);
-                    if (post != null)
-                    {
-                       post.LikeNumber = post.LikeNumber + 1;
-                     }                       
+                    _context.FeelingPosts.Add(add);                     
                     _context.SaveChanges();
 
                 }
-                msg.Title = "like ok";
+                msg.Title = "Thả cảm xúc thành công";
                 
             }
             catch (Exception e)
