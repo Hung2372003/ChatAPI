@@ -312,15 +312,15 @@ namespace FakeFacebook.Controllers.AppUser
                                                                 || x.UserCode2 == StaticUser)
                                                                 && x.Status == "ALREADY_FRIENDS"
                                                                 && x.IsDeleted == false
-                                                               ).Take(20)
+                                                               )
                           where (1 == 1)
                           select new
                           {
                               UserCode = a.UserCode2 == StaticUser ? a.UserCode1 : a.UserCode2,
                           };
             var friendList = friends.ToList();
-            var user = (from a in _context.UserInformations.Where(x => x.IsDeleted == false).Take(10).ToList()
-                        .Where(x => ContainsCharIgnoreCaseAndDiacritics(x.Name ?? "", text) || Convert.ToString(x.Id)==text).ToList()
+            var user = (from a in _context.UserInformations.Where(x => x.IsDeleted == false).ToList()
+                        .Where(x => ContainsCharIgnoreCaseAndDiacritics(x.Name.Trim() ?? "", text) || Convert.ToString(x.Id)== RemoveDiacritics(text)).ToList()
                        select new
                        {
                            a.Id,
@@ -330,7 +330,7 @@ namespace FakeFacebook.Controllers.AppUser
                            a.PhoneNumber,
                            Status=_context.FriendDoubles.FirstOrDefault(x=> (x.UserCode1 == a.Id && x.UserCode2 == StaticUser) 
                                                                             || (x.UserCode2 == a.Id && x.UserCode1 == StaticUser)
-                                                                            &&x.IsDeleted==false)?.Status,                                              
+                                                                            &&x.IsDeleted==false)?.Status ?? "",                                              
                            Avatar= (a.Avatar!=null)? $"{_getImageDataLink}/{a.Avatar}"
                                                  : $"{_getImageDataLink}/{_foderSaveAvatarFile}/mostavatar.png",
                        }).ToList();
@@ -391,7 +391,9 @@ namespace FakeFacebook.Controllers.AppUser
             }
             string normalizedText = text.Normalize(NormalizationForm.FormD);
             Regex regex = new Regex(@"\p{Mn}");
-            return regex.Replace(normalizedText, string.Empty);
+            //return regex.Replace(normalizedText, string.Empty);
+            return regex.Replace(normalizedText, string.Empty).Normalize(NormalizationForm.FormC);
+
         }
 
     }

@@ -316,7 +316,7 @@ namespace FakeFacebook.Controllers.Post
 
         [HttpGet("GetFeelPost")]
         [Authorize]
-        public IActionResult GetFeelPost(int postCode)
+        public IActionResult GetFeelPost(int? postCode)
         {
             var msg = new Message() { Title = "", Error = false, Object = "" };
             try
