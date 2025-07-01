@@ -314,5 +314,43 @@ namespace FakeFacebook.Controllers.Post
             return new JsonResult(msg);
         }
 
+        [HttpGet("GetFeelPost")]
+        [Authorize]
+        public IActionResult GetFeelPost(int postCode)
+        {
+            var msg = new Message() { Title = "", Error = false, Object = "" };
+            try
+            {
+                var check = _context.FeelingPosts.Where(x => x.PostId == postCode && x.Feeling != null && x.Feeling != "").ToList();
+                if (check != null)
+                {
+                    var data = from a in check
+                               join b in _context.UserInformations
+                               on a.CreatedBy equals b.Id
+                               select new
+                               {
+                                   UserCode = a.CreatedBy,
+                                   b.Name,
+                                   Avatar = b.Avatar,
+                                   a.Feeling,
+                               };
+                    msg.Object = data.ToList();
+                    msg.Title = "ok";
+
+                }
+                else
+                {
+                    msg.Error=true;
+                    msg.Title = "không có cảm xúc nào được thả";
+                }
+
+            }
+            catch (Exception e) { 
+                msg.Title = e.Message;
+                msg.Error = true;           
+            }
+            return new JsonResult(msg);
+        }
+
     }
 }

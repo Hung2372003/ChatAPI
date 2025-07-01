@@ -155,7 +155,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 else
                 {
                   
-                    var token = _jwtService.GenerateJwtToken(check.UserCode, check.Role, check.Permission);
+                    var token = _jwtService.GenerateJwtToken(check.UserCode, (check.Role != null)?check.Role:"User", (check.Permission != null)?check.Permission:"NOT");
                    Response.Cookies.Append("access_token", token, new CookieOptions
                     { 
                         HttpOnly = true,
@@ -251,7 +251,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
             catch (Exception e){
 
                 msg.Error = true;
-                msg.Title = "Có lỗi xảy ra!";
+                msg.Title = "Có lỗi xảy ra!" +e.Message;
             }
             return Ok(msg);
         }
