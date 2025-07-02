@@ -242,7 +242,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                     }
                     _context.SaveChanges();
 
-                    var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId && x.Id >= data.MessId).OrderByDescending(x => x.Id)
+                    var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId).OrderByDescending(x => x.Id)
                                join b in _context.FileChats on a.FileCode equals b.FileCode into b1
                                from b in b1.DefaultIfEmpty()
                                group new { a, b }
