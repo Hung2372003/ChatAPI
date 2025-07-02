@@ -320,7 +320,7 @@ namespace FakeFacebook.Controllers.AppUser
                           };
             var friendList = friends.ToList();
             var user = (from a in _context.UserInformations.Where(x => x.IsDeleted == false).ToList()
-                        .Where(x => ContainsCharIgnoreCaseAndDiacritics(x.Name.Trim() ?? "", text) || Convert.ToString(x.Id)== RemoveDiacritics(text)).ToList()
+                        .Where(x => ContainsCharIgnoreCaseAndDiacritics(x.Name ?? "", text) || Convert.ToString(x.Id)== RemoveDiacritics(text)).ToList()
                        select new
                        {
                            a.Id,
