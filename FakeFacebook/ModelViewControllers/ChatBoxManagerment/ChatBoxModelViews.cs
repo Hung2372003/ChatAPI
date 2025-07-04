@@ -4,6 +4,9 @@
     {
         public int GroupChatId { get; set; }
         public string? Content { get; set; }
+
+        //new - not
+        public int? PostId { get;set;
     }
     public class CreateWindowChat
     {
