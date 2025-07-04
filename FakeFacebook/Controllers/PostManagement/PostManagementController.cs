@@ -315,14 +315,14 @@ namespace FakeFacebook.Controllers.Post
         }
 
         [HttpGet("GetFeelPost")]
-        [Authorize]
+        //[Authorize]
         public IActionResult GetFeelPost(int? postCode)
         {
             var msg = new Message() { Title = "", Error = false, Object = "" };
             try
             {
-                var check = _context.FeelingPosts.Where(x => x.PostId == postCode && x.Feeling != null && x.Feeling != "").ToList();
-                if (check != null)
+                var check = _context.FeelingPosts.Where(x => x.PostId == postCode && x.Feeling != null).ToList();
+                if (check.Count > 0)
                 {
                     var data = from a in check
                                join b in _context.UserInformations
@@ -331,7 +331,7 @@ namespace FakeFacebook.Controllers.Post
                                {
                                    UserCode = a.CreatedBy,
                                    b.Name,
-                                   Avatar = b.Avatar,
+                                   Avatar = _getImageDataLink + "/" + b.Avatar,
                                    a.Feeling,
                                };
                     msg.Object = data.ToList();
