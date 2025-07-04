@@ -500,7 +500,6 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             }
             catch (Exception ex)
             {
-
                 return StatusCode(500, new { Message = "Internal Server Error" +ex });
             }
         }

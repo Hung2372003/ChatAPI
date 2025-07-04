@@ -16,6 +16,6 @@ namespace FakeFacebook.Models
         public int? UpdatedBy { get; set; }
         public bool? IsDeleted { get; set; }
         public int? FileCode {  get; set; }   
-        public DateTime? ContentTime{ get; set;
+        public DateTime? ContentTime { get; set; }
     }
 }
