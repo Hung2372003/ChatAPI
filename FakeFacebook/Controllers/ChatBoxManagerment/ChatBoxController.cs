@@ -7,9 +7,7 @@ using FakeFacebook.ModelViewControllers.ChatBoxManagerment;
 using FakeFacebook.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Net.WebSockets;
 using System.Security.Claims;
-using static FakeFacebook.ModelViewControllers.ChatBox.ChatBoxModelViews;
 
 
 namespace FakeFacebook.Controllers.ChatBoxManagerment
@@ -132,8 +130,8 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
 
                 if (data?.UserCode != null)
                 {
-                    var CheckGroupChatIdNew = from a in _context.ChatGroups.Where(x => x.GroupDouble == true) 
-                                           join b in _context.GroupMembers.Where(x => x.MemberCode == data.UserCode)
+                    var CheckGroupChatIdNew = from a in _context.ChatGroups.Where(x => x.GroupDouble == true && x.IsDeleted==false) 
+                                           join b in _context.GroupMembers.Where(x => x.MemberCode == data.UserCode && x.IsDeleted==false)
                                            on a.Id equals b.GroupChatId
                                            select new
                                            {
@@ -141,7 +139,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                                            };
 
                     var GroupChatId = (from a in CheckGroupChatIdNew
-                                      join b in _context.GroupMembers.Where(x => x.MemberCode == StaticUser)
+                                      join b in _context.GroupMembers.Where(x => x.MemberCode == StaticUser && x.IsDeleted == false)
                                       on a.Id equals b.GroupChatId
                                       select new
                                       {
@@ -346,6 +344,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                 chatContent.Content = ojb.Content;
                 chatContent.GroupChatId = ojb.GroupChatId;
                 chatContent.CreatedTime = DateTime.UtcNow;
+                chatContent.IsDeleted = false;
                 _context.ChatContents.Add(chatContent);
                 _context.SaveChanges();
 
