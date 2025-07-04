@@ -42,6 +42,28 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             return new JsonResult(users.ToList());  // Trả về danh sách UserId
         }
 
+        [HttpGet("GetAllGroupChatId")]
+        [Authorize]
+        public IActionResult GetAllGroupChatId() {
+            var msg = new Message { Id = 0, Error = false, Title = "", Object = new List<object>() };
+            var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            try
+            {
+                var ListGroup = from a in _context.ChatGroups.Where(x => x.IsDeleted == false)
+                                join b in _context.GroupMembers.Where(x => x.MemberCode == StaticUser && x.IsDeleted == false)
+                                on a.Id equals b.GroupChatId
+                                select new
+                                {
+                                    GroupChatId = a.Id,
+                                };
+                msg.Object = ListGroup.ToList();
+            }
+            catch (Exception ex) { 
+                msg.Error = true;
+                msg.Title = ex.Message;  
+            }
+            return new JsonResult(msg);
+        }
         [HttpGet("GetGroupChat")]
         [Authorize]
         public JsonResult GetGroupChat()
