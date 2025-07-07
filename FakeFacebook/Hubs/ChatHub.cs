@@ -70,7 +70,7 @@ public class ChatHub : Hub
 
     }
 
-    public async Task SendNotificationToGroup(string Notification, string GroupId)
+    public async Task SendNotificationToGroup(string GroupId, string Notification)
     {
         try
         {
