@@ -35,9 +35,9 @@ namespace FakeFacebook.Controllers.Post
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             try
             {
-                var GetPostCheck = from a in _context.Posts.Where(x => (x.Status == "PUBLIC" && x.Status == "FRIEND") && x.IsDeleted == false)
+                var GetPostCheck = from a in _context.Posts.Where(x => x.Status == "PUBLIC" && x.IsDeleted == false)
                                 .OrderByDescending(x => x.Id)
-                                .Take(30)
+                                   
                                    join b in _context.UserInformations
                                    on a.CreatedBy equals b.Id
                                    join g in _context.FileInformations
@@ -81,11 +81,12 @@ namespace FakeFacebook.Controllers.Post
                 var GetPost = GetPostCheck.ToList();
             for (int i = 0; i < GetPost.Count; i++)
             {
-                if (GetPost[i].Status == "FRIEND")
+                if (GetPost[i].Status == "PUBLIC")
                 {
                     var check = _context.FriendDoubles.FirstOrDefault(x =>
                                                         (x.UserCode1 == GetPost[i].CreatedBy && x.UserCode2 == StaticUser)
-                                                        || (x.UserCode2 == GetPost[i].CreatedBy && x.UserCode1 == StaticUser));
+                                                        || (x.UserCode2 == GetPost[i].CreatedBy && x.UserCode1 == StaticUser)                                                       
+                                                        && x.Status == "ALREADY_FRIENDS");
                     if (check == null)
                     {
                         GetPost.Remove(GetPost[i]);

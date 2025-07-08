@@ -219,7 +219,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
                     {
                         HttpOnly = true,
                         Secure = false, // dùng HTTPS
-                        SameSite = SameSiteMode.Lax,
+                        SameSite = SameSiteMode.None,
                         Expires = DateTimeOffset.UtcNow.AddHours(24)
                     });
                     msg.Title = "Đăng ký thành công";
@@ -245,7 +245,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 if (check == null)
                 {
                     msg.Error = true;
-                    msg.Title = "Vui lòng đăng nhập!";
+                    msg.Title = "Tài khoản chưa đươc đăng ký đăng nhập!";
                 }
             }
             catch (Exception e){
