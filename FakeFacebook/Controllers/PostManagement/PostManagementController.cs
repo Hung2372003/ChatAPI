@@ -78,21 +78,16 @@ namespace FakeFacebook.Controllers.Post
                                    }).ToList()
                                };
 
-                var GetPost = GetPostCheck.ToList();
-            for (int i = 0; i < GetPost.Count; i++)
-            {
-                if (GetPost[i].Status == "PUBLIC")
-                {
-                    var check = _context.FriendDoubles.FirstOrDefault(x =>
-                                                        (x.UserCode1 == GetPost[i].CreatedBy && x.UserCode2 == StaticUser)
-                                                        || (x.UserCode2 == GetPost[i].CreatedBy && x.UserCode1 == StaticUser)                                                       
-                                                        && x.Status == "ALREADY_FRIENDS");
-                    if (check == null)
-                    {
-                        GetPost.Remove(GetPost[i]);
-                    }
-                }
-            }
+                //var GetPost = GetPostCheck.ToList();
+          var GetPost = GetPostCheck
+                .Where(post =>
+                    post.Status != "PUBLIC" ||
+                    _context.FriendDoubles.Any(f =>
+                        ((f.UserCode1 == post.CreatedBy && f.UserCode2 == StaticUser) ||
+                         (f.UserCode2 == post.CreatedBy && f.UserCode1 == StaticUser))
+                         && f.Status == "ALREADY_FRIENDS"))
+                .ToList();
+
             msg.Object = GetPost.OrderByDescending(x => x.Id);
         }
             catch (Exception ex) { 
@@ -216,9 +211,9 @@ namespace FakeFacebook.Controllers.Post
             }
             return new JsonResult(msg);
         }
-        [HttpPost("AddComment")]
+        [HttpPost("AddNewComment")]
         [Authorize]
-        public JsonResult AddComment(CommentModelViews data)
+        public JsonResult AddNewComment(CommentModelViews data)
         {
             var msg = new Message() { Title = "", Error = false, Object = "" };
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
