@@ -53,8 +53,8 @@ namespace FakeFacebook.Controllers.AccountSecurity
                     Response.Cookies.Append("access_token", token, new CookieOptions
                     {
                         HttpOnly = true,
-                        Secure = false, // dùng HTTPS
-                        SameSite = SameSiteMode.Lax,
+                        Secure = true, // dùng HTTPS
+                        SameSite = SameSiteMode.None,
                         Expires = DateTimeOffset.UtcNow.AddHours(24)
                     });
                     msg.Title = "Đăng nhập thành công";
@@ -159,8 +159,8 @@ namespace FakeFacebook.Controllers.AccountSecurity
                    Response.Cookies.Append("access_token", token, new CookieOptions
                     { 
                         HttpOnly = true,
-                        Secure = false, // dùng HTTPS
-                        SameSite = SameSiteMode.Lax,
+                        Secure = true, // dùng HTTPS
+                        SameSite = SameSiteMode.None,
                         Expires = DateTimeOffset.UtcNow.AddHours(24)
                     });
 
@@ -218,7 +218,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
                     Response.Cookies.Append("access_token", token, new CookieOptions
                     {
                         HttpOnly = true,
-                        Secure = false, // dùng HTTPS
+                        Secure = true, // dùng HTTPS
                         SameSite = SameSiteMode.None,
                         Expires = DateTimeOffset.UtcNow.AddHours(24)
                     });
@@ -263,8 +263,8 @@ namespace FakeFacebook.Controllers.AccountSecurity
             {
                 Expires = DateTimeOffset.UtcNow.AddDays(-1),
                 HttpOnly = true,
-                Secure = false, // nên dùng true nếu backend có HTTPS
-                SameSite = SameSiteMode.Lax
+                Secure = true, // nên dùng true nếu backend có HTTPS
+                SameSite = SameSiteMode.None
             });
 
             return Ok(new { Message = "Đăng xuất thành công" });
