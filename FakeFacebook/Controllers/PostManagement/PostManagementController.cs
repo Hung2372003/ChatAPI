@@ -35,7 +35,7 @@ namespace FakeFacebook.Controllers.Post
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             try
             {
-                var GetPostCheck = from a in _context.Posts.Where(x => (x.Status == "PUBLIC" || x.Status == "FRIEND") && x.IsDeleted == false)
+                var GetPostCheck = from a in _context.Posts.Where(x => (x.Status == "PUBLIC" && x.Status == "FRIEND") && x.IsDeleted == false)
                                 .OrderByDescending(x => x.Id)
                                 .Take(30)
                                    join b in _context.UserInformations
