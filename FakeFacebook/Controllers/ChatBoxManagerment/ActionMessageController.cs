@@ -90,6 +90,35 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             return new JsonResult(msg);
         }
 
+        [HttpDelete("DeleteMessage")]
+        public IActionResult DeleteMessage(int Id)
+        {
+            var msg = new Message() { Title = "", Error = false, Object = "" };
+            var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            try
+            {
+                var check = _context.ChatContents.FirstOrDefault(x => x.Id == Id && x.IsDeleted == false);
+                if(check != null)
+                {
+                    check.IsDeleted = false;
+                    msg.Title = "Thu hồi tin nhắn thành công";
+
+                }
+                else
+                {
+                    msg.Title = "Tín nhắn đã được xóa hoặc không tồn tại";
+                }
+            }
+            catch(Exception e)
+            {
+                msg.Error = true;
+                msg.Title = "Có lỗi xảy ra khi xóa tin nhắn!" + e.Message;
+            }
+            return Ok(msg);
+        }
+
+
+
         [HttpPatch("SetStatusReadMessage")]
         public JsonResult SetStatusReadMessage([FromBody] int GroupChatId)
         {

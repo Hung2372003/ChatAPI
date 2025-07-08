@@ -291,6 +291,7 @@ namespace FakeFacebook.Controllers.Post
                     //{
                         check.Feeling = data.Feeling;
                     //}
+                    _context.Update(check);
                     _context.SaveChanges();
                 }
                 else

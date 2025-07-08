@@ -6,7 +6,7 @@
         public string? Content { get; set; }
 
         //new - not
-        public int? PostId { get; set; }
+        //public int? PostId { get; set; }
     }
     public class CreateWindowChat
     {

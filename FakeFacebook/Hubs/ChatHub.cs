@@ -45,7 +45,6 @@ public class ChatHub : Hub
         //await Clients.Group(GroupChatId).SendAsync("ReceiveMessage", $"{Context.ConnectionId} đã tham gia nhóm {GroupChatId}");
     }
 
-    // Khi người dùng rời khỏi phòng (group)
     public async Task LeaveGroup(string GroupChatId)
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupChatId);
@@ -54,7 +53,6 @@ public class ChatHub : Hub
         //await Clients.Group(GroupChatId).SendAsync("ReceiveMessage", $"{Context.ConnectionId} đã rời khỏi nhóm {GroupChatId}");
     }
 
-    // Gửi tin nhắn đến groupchat
     public async Task SendMessageToGroup(string GroupChatId, string? Contents,object ListFile)
     {
         try
