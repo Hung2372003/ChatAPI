@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.VisualBasic;
 using System.Security.Claims;
 
-//[Authorize]
+[Authorize]
 public class ChatHub : Hub
     {
     private static readonly Dictionary<string, string> _connections = new Dictionary<string, string>();

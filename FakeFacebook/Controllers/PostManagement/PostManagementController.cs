@@ -36,8 +36,7 @@ namespace FakeFacebook.Controllers.Post
             try
             {
                 var GetPostCheck = from a in _context.Posts.Where(x => x.Status == "PUBLIC" && x.IsDeleted == false )
-                                .OrderByDescending(x => x.Id)
-                                   
+                                .OrderByDescending(x => x.Id)                                  
                                    join b in _context.UserInformations
                                    on a.CreatedBy equals b.Id
                                    join g in _context.FileInformations
