@@ -163,7 +163,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
                         SameSite = SameSiteMode.None,
                         Expires = DateTimeOffset.UtcNow.AddHours(24)
                     });
-
+                    msg.Id = check.UserCode;
                     msg.Title = "Đăng nhập thành công";
                 }
             }
@@ -200,6 +200,8 @@ namespace FakeFacebook.Controllers.AccountSecurity
                     AddInfor.IsEncryption = true;
                     _context.UserInformations.Add(AddInfor);
                     _context.SaveChanges();
+
+                    msg.Id = AddInfor.Id;
 
                     var AddAcc = new UserAccount();
                     AddAcc.UserCode = AddInfor.Id;

@@ -9,7 +9,6 @@ using System.Security.Claims;
 public class ChatHub : Hub
     {
     private static readonly Dictionary<string, string> _connections = new Dictionary<string, string>();
-    // khi kết nối client
     public override async Task OnConnectedAsync()
     {
         var UserCode = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -18,7 +17,6 @@ public class ChatHub : Hub
         await Clients.All.SendAsync("ListUserOnline", ListUser);
         await base.OnConnectedAsync();
     }
-    // khi ngát kết nối clent
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         string connectionId = Context.ConnectionId;
@@ -35,30 +33,26 @@ public class ChatHub : Hub
         await base.OnDisconnectedAsync(exception);
     }
 
-    
-    //kết nối đến GroupChat
-    public async Task JoinGroup(string GroupChatId)
+    public async Task JoinGroup(string GroupId)
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, GroupChatId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, GroupId);
         var ListUser = GetAllConnectedUsers();
         await Clients.All.SendAsync("ListUserOnline", ListUser);
-        //await Clients.Group(GroupChatId).SendAsync("ReceiveMessage", $"{Context.ConnectionId} đã tham gia nhóm {GroupChatId}");
     }
 
-    public async Task LeaveGroup(string GroupChatId)
+    public async Task LeaveGroup(string GroupId)
     {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupChatId);
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupId);
         var ListUser = GetAllConnectedUsers();
         await Clients.All.SendAsync("ListUserOnline", ListUser);
-        //await Clients.Group(GroupChatId).SendAsync("ReceiveMessage", $"{Context.ConnectionId} đã rời khỏi nhóm {GroupChatId}");
     }
 
-    public async Task SendMessageToGroup(string GroupChatId, string? Contents,object ListFile)
+    public async Task SendMessageToGroup(string GroupId, string? Contents,object? ListFile)
     {
         try
         {
             var UserCode = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            await Clients.Group(GroupChatId).SendAsync("ReceiveMessage", GroupChatId , Contents, UserCode, ListFile);
+            await Clients.Group(GroupId).SendAsync("ReceiveMessage", GroupId, Contents, UserCode, ListFile);
         }
         catch (Exception ex)
         {

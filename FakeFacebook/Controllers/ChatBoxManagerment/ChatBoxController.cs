@@ -176,7 +176,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
 
                         msg.PreventiveObject = new { 
                             GroupChatId=addGroup.Id,
-                            GroupDouble=addGroup.GroupDouble
+                            //GroupDouble=addGroup.GroupDouble
                         };
                         msg.Title = "NotMess";
                         return new JsonResult(msg);
@@ -196,12 +196,12 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                         {
                             msg.PreventiveObject = new {
                                 GroupChatId = GroupChatId,
-                                GroupDouble = true
+                                //GroupDouble = true
                             };
                             msg.Title = "NotMess";
                             return new JsonResult(msg);
                         }
-                        var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == GroupChatId).OrderByDescending(x => x.Id)
+                        var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == GroupChatId && (data.MessId == null || x.Id < data.MessId)).OrderByDescending(x => x.Id).Take(20)
                                    join b in _context.FileChats on a.FileCode equals b.FileCode into b1
                                    from b in b1.DefaultIfEmpty()
                                    group new {a,b}
@@ -237,7 +237,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                         msg.PreventiveObject = new
                         {
                             GroupChatId = GroupChatId,
-                            GroupDouble = _context.ChatGroups.FirstOrDefault(x => x.Id == GroupChatId)?.GroupDouble
+                            //GroupDouble = _context.ChatGroups.FirstOrDefault(x => x.Id == GroupChatId)?.GroupDouble
                         };
                         return new JsonResult(msg);
                     }
@@ -250,7 +250,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                     {
                         msg.PreventiveObject = new { 
                             GroupChatId=data.GroupChatId,
-                            GroupDouble=_context.ChatGroups.FirstOrDefault(x=>x.Id==data.GroupChatId)?.GroupDouble
+                            //GroupDouble=_context.ChatGroups.FirstOrDefault(x=>x.Id==data.GroupChatId)?.GroupDouble
                         };
                         msg.Title = "NotMess";
                         return new JsonResult(msg);
@@ -263,7 +263,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                     }
                     _context.SaveChanges();
 
-                    var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId).OrderByDescending(x => x.Id)
+                    var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId && (data.MessId == null || x.Id < data.MessId)).OrderByDescending(x => x.Id).Take(20)
                                join b in _context.FileChats on a.FileCode equals b.FileCode into b1
                                from b in b1.DefaultIfEmpty()
                                group new { a, b }
@@ -299,7 +299,6 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                     msg.PreventiveObject = new
                     {
                         GroupChatId=data.GroupChatId,
-                        GroupDouble=_context.ChatGroups.FirstOrDefault(x => x.Id==data.GroupChatId)?.GroupDouble
                     };
                     return new JsonResult(msg);
 
@@ -316,9 +315,9 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             return new JsonResult(msg);
         }
      
-        [HttpPost("UpdateMessage")]
+        [HttpPost("AddNewMessage")]
         [Authorize]
-        public async Task<IActionResult> UpdateMessage([FromForm] ChatBoxModelViews ojb, [FromForm] List<IFormFile> FileUpload)
+        public async Task<IActionResult> AddNewMessage([FromForm] ChatBoxModelViews ojb, [FromForm] List<IFormFile> FileUpload)
         {
             var msg = new Message { Id = 0, Error = false, Title = "", Object = new List<object>() };
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
@@ -337,7 +336,6 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                     }
                     _context.GroupMembers.Update(data[i]);
                 }
-                _context.SaveChanges();
 
                 var chatContent = new ChatContent();
                 chatContent.CreatedBy = StaticUser;
@@ -346,7 +344,6 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                 chatContent.CreatedTime = DateTime.UtcNow;
                 chatContent.IsDeleted = false;
                 _context.ChatContents.Add(chatContent);
-                _context.SaveChanges();
 
                 msg.Id = chatContent.Id;
                 if (FileUpload != null && FileUpload.Count > 0)
@@ -378,8 +375,9 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                             });
                         }
                     }
-                    _context.SaveChanges();
+                    //_context.SaveChanges();
                 }
+                _context.SaveChanges();
                 return new JsonResult(msg);
             }
             catch (Exception ex)
