@@ -33,8 +33,8 @@ namespace FakeFacebook.Controllers.AppUser
 
         }
 
-        [HttpPost("GetPersonalInformation")]
-        public JsonResult GetInformation([FromBody] int userCode)
+        [HttpGet("GetPersonalInformation")]
+        public JsonResult GetInformation(int userCode)
         {
             var msg = new Message() { Title = "", Error = false, Object = ""};
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);

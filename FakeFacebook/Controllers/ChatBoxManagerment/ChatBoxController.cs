@@ -477,51 +477,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
         }
 
 
-        [HttpPatch("SetStatusMess")]
-        [Authorize]
-        public JsonResult SetStatusMess(int groupChatId)
-        {
-            var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var msg = new Message{ Error = false, Title = "",Object="" };
-            try
-            {
-                var check = _context.GroupMembers.FirstOrDefault(x => x.GroupChatId == groupChatId && x.MemberCode == StaticUser);
-                if (check != null)
-                {
-                    check.Status = true;
-                    _context.SaveChanges();
-                    msg.Title = "Đã đọc tin nhắn";
-                }
-                else {
-                    msg.Title = "bạn không có trong đoạn chát này";
-                }
-            }
-            catch(Exception e)
-            {
-                msg.Error= true;
-                msg.Title = e.Message;
-            }
-            return new JsonResult(msg);
-        }
-
-        [HttpGet("GetUnreadMessageCount")]
-        [Authorize]
-        public IActionResult GetUnreadMessageCount()
-        {
-            var userId = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            try
-            {
-                var count = _context.GroupMembers
-                    .Where(x => !x.IsDeleted && x.MemberCode == userId && x.Status == false)
-                    .Count();
-
-                return Ok(new { Count = count });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Message = "Internal Server Error" +ex });
-            }
-        }
+      
 
 
 

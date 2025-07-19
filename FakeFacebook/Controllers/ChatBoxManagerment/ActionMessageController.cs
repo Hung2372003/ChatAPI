@@ -147,6 +147,23 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             }
             return new JsonResult(msg);
         }
+        [HttpGet("GetUnreadMessageCount")]
+        [Authorize]
+        public IActionResult GetUnreadMessageCount()
+        {
+            var userId = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            try
+            {
+                var count = _context.GroupMembers
+                    .Where(x => !x.IsDeleted && x.MemberCode == userId && x.Status == false)
+                    .Count();
 
+                return Ok(new { Count = count });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Internal Server Error" + ex });
+            }
+        }
     }
 }
