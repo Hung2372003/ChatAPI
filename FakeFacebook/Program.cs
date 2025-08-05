@@ -116,18 +116,18 @@ builder.Services.AddSwaggerGen(c =>
     {
         Version = "v1",
         Title = "ToDo API (Try with: Admin - 1234)",
-        Description = "An ASP.NET Core Web API for managing ToDo items",
-        TermsOfService = new Uri("https://example.com/terms"),
+        Description = "An ASP.NET Core Web API for mini social network",
+        //TermsOfService = new Uri("https://example.com/terms"),
         Contact = new OpenApiContact
         {
-            Name = "FontendTest",
-            Url = new Uri("https://example.com/contact")
+            Name = "Try with the interface (Under development)",
+            Url = new Uri("https://angular-fb-beta.vercel.app/login")
         },
-        License = new OpenApiLicense
-        {
-            Name = "Example License",
-            Url = new Uri("https://example.com/license")
-        }
+        //License = new OpenApiLicense
+        //{
+        //    Name = "Example License",
+        //    Url = new Uri("https://example.com/license")
+        //}
     });
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
