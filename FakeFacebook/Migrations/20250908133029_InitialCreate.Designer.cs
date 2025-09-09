@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FakeFacebook.Migrations
 {
     [DbContext(typeof(FakeFacebookDbContext))]
-    [Migration("20250610120621_InitialCreate")]
+    [Migration("20250908133029_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -20,10 +20,10 @@ namespace FakeFacebook.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.0")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("ProductVersion", "9.0.6")
+                .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
             modelBuilder.Entity("FakeFacebook.Models.ChatContent", b =>
                 {
@@ -32,38 +32,42 @@ namespace FakeFacebook.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ID");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Content")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("CONTENT");
 
-                    b.Property<int>("CreatedBy")
+                    b.Property<DateTime?>("ContentTime")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("CONTENT_TIME");
+
+                    b.Property<int?>("CreatedBy")
                         .HasColumnType("int")
                         .HasColumnName("CREATED_BY");
 
-                    b.Property<DateTime>("CreatedTime")
-                        .HasColumnType("datetime2")
+                    b.Property<DateTime?>("CreatedTime")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("CREATED_TIME");
 
-                    b.Property<int>("FileCode")
+                    b.Property<int?>("FileCode")
                         .HasColumnType("int")
                         .HasColumnName("FILE_CODE");
 
-                    b.Property<int>("GroupChatId")
+                    b.Property<int?>("GroupChatId")
                         .HasColumnType("int")
                         .HasColumnName("GROUP_CHAT_ID");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit")
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("tinyint(1)")
                         .HasColumnName("IS_DELETED");
 
-                    b.Property<int>("UpdatedBy")
+                    b.Property<int?>("UpdatedBy")
                         .HasColumnType("int")
                         .HasColumnName("UPDATED_BY");
 
-                    b.Property<DateTime>("UpdatedTime")
-                        .HasColumnType("datetime2")
+                    b.Property<DateTime?>("UpdatedTime")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("UPDATED_TIME");
 
                     b.HasKey("Id")
@@ -79,30 +83,30 @@ namespace FakeFacebook.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ID");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("CreatedBy")
                         .HasColumnType("int")
                         .HasColumnName("CREATED_BY");
 
                     b.Property<DateTime>("CreatedTime")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("CREATED_TIME");
 
                     b.Property<string>("GroupAvartar")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("GROUP_AVARTAR");
 
                     b.Property<bool>("GroupDouble")
-                        .HasColumnType("bit")
+                        .HasColumnType("tinyint(1)")
                         .HasColumnName("GROUP_DOUBLE");
 
                     b.Property<string>("GroupName")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("GROUP_NAME");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit")
+                        .HasColumnType("tinyint(1)")
                         .HasColumnName("IS_DELETED");
 
                     b.Property<int?>("Quantity")
@@ -110,7 +114,7 @@ namespace FakeFacebook.Migrations
                         .HasColumnName("QUANTITY");
 
                     b.Property<bool>("Status")
-                        .HasColumnType("bit")
+                        .HasColumnType("tinyint(1)")
                         .HasColumnName("STATUS");
 
                     b.HasKey("Id")
@@ -126,15 +130,15 @@ namespace FakeFacebook.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ID");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("CreatedBy")
                         .HasColumnType("int")
                         .HasColumnName("CREATED_BY");
 
-                    b.Property<bool>("Like")
-                        .HasColumnType("bit")
-                        .HasColumnName("LIKE");
+                    b.Property<string>("Feeling")
+                        .HasColumnType("longtext")
+                        .HasColumnName("FEELING");
 
                     b.Property<int>("PostId")
                         .HasColumnType("int")
@@ -153,42 +157,38 @@ namespace FakeFacebook.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ID");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedTime")
-                        .HasColumnType("datetime2")
+                    b.Property<DateTime?>("CreatedTime")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("CREATED_TIME");
 
-                    b.Property<int>("DeletedBy")
+                    b.Property<int?>("DeletedBy")
                         .HasColumnType("int")
                         .HasColumnName("DELETED_BY");
 
-                    b.Property<int>("FileCode")
+                    b.Property<int?>("FileCode")
                         .HasColumnType("int")
                         .HasColumnName("FILE_CODE");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit")
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("tinyint(1)")
                         .HasColumnName("IS_DELETED");
 
                     b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("NAME");
 
                     b.Property<string>("NameExtension")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("NAME_EXTENSION");
 
                     b.Property<string>("Path")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("PATH");
 
                     b.Property<string>("ServerCode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("SERVER_CODE");
 
                     b.Property<long?>("Size")
@@ -196,8 +196,7 @@ namespace FakeFacebook.Migrations
                         .HasColumnName("SIZE");
 
                     b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("TYPE");
 
                     b.HasKey("Id")
@@ -213,7 +212,7 @@ namespace FakeFacebook.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ID");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int?>("Code")
                         .HasColumnType("int")
@@ -224,23 +223,23 @@ namespace FakeFacebook.Migrations
                         .HasColumnName("CREATED_BY");
 
                     b.Property<DateTime?>("CreatedTime")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("CREATED_TIME");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit")
+                        .HasColumnType("tinyint(1)")
                         .HasColumnName("IS_DELETED");
 
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("NAME");
 
                     b.Property<string>("Path")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("PATH");
 
                     b.Property<string>("Type")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("TYPE");
 
                     b.Property<int?>("UpdatedBy")
@@ -248,7 +247,7 @@ namespace FakeFacebook.Migrations
                         .HasColumnName("UPDATED_BY");
 
                     b.Property<DateTime?>("UpdatedTime")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("UPDATED_TIME");
 
                     b.HasKey("Id")
@@ -264,22 +263,22 @@ namespace FakeFacebook.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ID");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("CreatedBy")
                         .HasColumnType("int")
                         .HasColumnName("CREATED_BY");
 
                     b.Property<DateTime>("CreatedTime")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("CREATED_TIME");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit")
+                        .HasColumnType("tinyint(1)")
                         .HasColumnName("IS_DELETED");
 
                     b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("STATUS");
 
                     b.Property<int>("UserCode1")
@@ -303,14 +302,14 @@ namespace FakeFacebook.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ID");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("DeletedBy")
                         .HasColumnType("int")
                         .HasColumnName("DELETED_BY");
 
                     b.Property<DateTime>("DeletedTime")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("DELETED_TIME");
 
                     b.Property<int>("GroupChatId")
@@ -322,11 +321,11 @@ namespace FakeFacebook.Migrations
                         .HasColumnName("INVITED_BY");
 
                     b.Property<DateTime>("InvitedTime")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("INVITED_TIME");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit")
+                        .HasColumnType("tinyint(1)")
                         .HasColumnName("IS_DELETED");
 
                     b.Property<int?>("MemberCode")
@@ -334,7 +333,7 @@ namespace FakeFacebook.Migrations
                         .HasColumnName("MEMBER_CODE");
 
                     b.Property<bool>("Status")
-                        .HasColumnType("bit")
+                        .HasColumnType("tinyint(1)")
                         .HasColumnName("STATUS");
 
                     b.HasKey("Id")
@@ -350,10 +349,10 @@ namespace FakeFacebook.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ID");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Content")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("CONTENT");
 
                     b.Property<int>("CreatedBy")
@@ -361,11 +360,11 @@ namespace FakeFacebook.Migrations
                         .HasColumnName("CREATED_BY");
 
                     b.Property<DateTime?>("CreatedTime")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("CREATED_TIME");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit")
+                        .HasColumnType("tinyint(1)")
                         .HasColumnName("IS_DELETED");
 
                     b.Property<int>("PostCode")
@@ -385,14 +384,14 @@ namespace FakeFacebook.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ID");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("CommentNumber")
                         .HasColumnType("int")
                         .HasColumnName("COMMENT_NUMBER");
 
                     b.Property<string>("Content")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("CONTENT");
 
                     b.Property<int>("CreatedBy")
@@ -400,11 +399,11 @@ namespace FakeFacebook.Migrations
                         .HasColumnName("CREATED_BY");
 
                     b.Property<DateTime>("CreatedTime")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("CREATED_TIME");
 
                     b.Property<bool?>("IsDeleted")
-                        .HasColumnType("bit")
+                        .HasColumnType("tinyint(1)")
                         .HasColumnName("IS_DELETED");
 
                     b.Property<int>("LikeNumber")
@@ -412,7 +411,7 @@ namespace FakeFacebook.Migrations
                         .HasColumnName("LIKE_NUMBER");
 
                     b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("STATUS");
 
                     b.HasKey("Id")
@@ -428,30 +427,38 @@ namespace FakeFacebook.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ID");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int?>("CreatedBy")
                         .HasColumnType("int")
                         .HasColumnName("CREATED_BY");
 
                     b.Property<DateTime>("CreatedTime")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("CREATED_TIME");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit")
+                        .HasColumnType("tinyint(1)")
                         .HasColumnName("IS_DELETED");
 
                     b.Property<bool?>("IsEncryption")
-                        .HasColumnType("bit")
+                        .HasColumnType("tinyint(1)")
                         .HasColumnName("IS_ENCRYPTION");
 
                     b.Property<string>("Permission")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("PERMISSION");
 
+                    b.Property<string>("Provider")
+                        .HasColumnType("longtext")
+                        .HasColumnName("PROVIDER");
+
+                    b.Property<string>("ProviderSub")
+                        .HasColumnType("longtext")
+                        .HasColumnName("PROVIDER_SUB");
+
                     b.Property<string>("Role")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("ROLE");
 
                     b.Property<int?>("UpdatedBy")
@@ -459,7 +466,7 @@ namespace FakeFacebook.Migrations
                         .HasColumnName("UPDATED_BY");
 
                     b.Property<DateTime>("UpdatedTime")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("UPDATED_TIME");
 
                     b.Property<int>("UserCode")
@@ -467,11 +474,11 @@ namespace FakeFacebook.Migrations
                         .HasColumnName("USER_CODE");
 
                     b.Property<string>("UserName")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("USER_NAME");
 
                     b.Property<string>("UserPassword")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("USER_PASSWORD");
 
                     b.HasKey("Id")
@@ -487,18 +494,18 @@ namespace FakeFacebook.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ID");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("ADDRESS");
 
                     b.Property<string>("Avatar")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("AVATAR");
 
-                    b.Property<string>("Birthday")
-                        .HasColumnType("nvarchar(max)")
+                    b.Property<DateTime?>("Birthday")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("BIRTHDAY");
 
                     b.Property<int?>("CreatedBy")
@@ -506,31 +513,31 @@ namespace FakeFacebook.Migrations
                         .HasColumnName("CREATED_BY");
 
                     b.Property<DateTime?>("CreatedTime")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("CREATED_TIME");
 
                     b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("EMAIL");
 
-                    b.Property<int>("FileCode")
+                    b.Property<int?>("FileCode")
                         .HasColumnType("int")
                         .HasColumnName("FILE_CODE");
 
                     b.Property<bool?>("IsDeleted")
-                        .HasColumnType("bit")
+                        .HasColumnType("tinyint(1)")
                         .HasColumnName("IS_DELETED");
 
                     b.Property<bool?>("IsEncryption")
-                        .HasColumnType("bit")
+                        .HasColumnType("tinyint(1)")
                         .HasColumnName("IS_ENCRYPTION");
 
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("NAME");
 
                     b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasColumnName("PHONE_NUMBER");
 
                     b.Property<int?>("UpdatedBy")
@@ -538,7 +545,7 @@ namespace FakeFacebook.Migrations
                         .HasColumnName("UPDATED_BY");
 
                     b.Property<DateTime?>("UpdatedTime")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasColumnName("UPDATED_TIME");
 
                     b.HasKey("Id")
