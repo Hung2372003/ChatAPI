@@ -20,9 +20,38 @@ namespace FakeFacebook.Data
         public DbSet<PostComment> PostComments { get; set; }
         public DbSet<FeelingPost> FeelingPosts { get; set; }
 
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        {
+            if (Database.IsMySql())
+            {
+                configurationBuilder.Properties<string>()
+                    .HaveColumnType("longtext");
+
+                configurationBuilder.Properties<DateTime>()
+                    .HaveColumnType("datetime(6)");
+
+                configurationBuilder.Properties<bool>()
+                    .HaveColumnType("tinyint(1)");
+            }
+            else if (Database.IsSqlServer())
+            {
+                configurationBuilder.Properties<string>()
+                    .HaveColumnType("nvarchar(max)");
+
+                configurationBuilder.Properties<DateTime>()
+                    .HaveColumnType("datetime2");
+
+                configurationBuilder.Properties<bool>()
+                    .HaveColumnType("bit");
+            }
+        }
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            // ChatContent entity
+         
 
             foreach (var entity in modelBuilder.Model.GetEntityTypes())
             {

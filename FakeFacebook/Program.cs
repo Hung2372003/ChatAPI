@@ -149,7 +149,16 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddScoped<GoogleAuthService>();
 builder.Services.AddControllers();
-builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("GearHostDatabase")));
+
+//builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("GearHostDatabase")));
+
+builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("MySQLDefaultConnection"),
+        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQLDefaultConnection"))
+    )
+);
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient<GitHubUploaderSevice>();
