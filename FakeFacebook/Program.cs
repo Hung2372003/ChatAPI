@@ -149,7 +149,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddScoped<GoogleAuthService>();
 builder.Services.AddControllers();
-builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("SmarterDatabase")));
+builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("GearHostDatabase")));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient<GitHubUploaderSevice>();
