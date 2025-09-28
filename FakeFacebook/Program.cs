@@ -5,12 +5,15 @@ using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+builder.Services.AddScoped<IFirebasePushService, FirebasePushService>();
 var key = builder.Configuration["JwtSettings:SecretKey"] ?? "2372003HungsssDepZaiSieuCapVuTru";
 if (builder.Environment.IsDevelopment())
 {
@@ -151,15 +154,36 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddScoped<GoogleAuthService>();
 builder.Services.AddControllers();
-//builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("GearHostDatabase")));
 
-builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("MySQLDefaultConnection"),
-        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQLDefaultConnection"))
-    )
-);
-builder.Services.AddScoped<IFirebasePushService, FirebasePushService>();
+
+//builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
+//    options.UseMySql(
+//        builder.Configuration.GetConnectionString("MySQLDefaultConnection"),
+//        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQLDefaultConnection"))
+//    )
+//);
+
+
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
+        options.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnection")
+        )
+    );
+}
+else
+{
+    builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
+       options.UseSqlServer(
+           builder.Configuration.GetConnectionString("MonsterASP")
+       )
+   );
+}
+
+
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient<GitHubUploaderSevice>();

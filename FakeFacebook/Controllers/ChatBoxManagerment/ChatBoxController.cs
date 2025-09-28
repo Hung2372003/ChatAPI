@@ -18,11 +18,12 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
     {
         private readonly FakeFacebookDbContext _context;
         private readonly string? _getImageDataLink;
+        private readonly ICloudinaryService _cloudinaryService;
         private readonly GitHubUploaderSevice _githubUploader;
         private readonly string? _foderSaveAvatarImage;
         private readonly string? _foderSaveChatFile;
         private readonly string? _foderSaveGroupAvatarImage;
-        public ChatBoxController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderSevice githubUploader)
+        public ChatBoxController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderSevice githubUploader, ICloudinaryService cloudinaryService)
         {
             _context = context;
             _getImageDataLink = configuration["Git:GetImageDataLink"];
@@ -30,6 +31,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             _foderSaveAvatarImage = "Images/Avatar";
             _foderSaveChatFile = "ChatBox";
             _foderSaveGroupAvatarImage = "Images/GroupAvatar";
+            _cloudinaryService = cloudinaryService;
         }
 
         // Get------------------------------------------------------

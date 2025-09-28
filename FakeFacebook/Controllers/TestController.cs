@@ -15,12 +15,21 @@ namespace FakeFacebook.Controllers
         private readonly FakeFacebookDbContext _context;
         private readonly GitHubUploaderSevice _githubUploader;
         private readonly IFirebasePushService _firebasePushService;
-        public TestController(IConfiguration configuration, FakeFacebookDbContext context, GitHubUploaderSevice githubUploader, IFirebasePushService firebasePushService)
+        private readonly ICloudinaryService _cloudinaryService;
+        public TestController(
+            IConfiguration configuration,
+            FakeFacebookDbContext context,
+            GitHubUploaderSevice githubUploader,
+            ICloudinaryService cloudinaryService,
+            IFirebasePushService firebasePushService
+            )
+
         {
             _configuration = configuration;
             _context = context;
             _githubUploader = githubUploader;
             _firebasePushService = firebasePushService;
+            _cloudinaryService = cloudinaryService;
 
         }
 
@@ -46,8 +55,32 @@ namespace FakeFacebook.Controllers
         }
 
 
+
+
+        [HttpPost("upload-video")]
+        public async Task<IActionResult> UploadVideoCloudinary(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file uploaded");
+
+            var url = await _cloudinaryService.UploadVideoAsync(file,"");
+            return Ok(url);
+        }
+
+        [HttpPost("upload-image")]
+        public async Task<IActionResult> UploadImageCloudinary(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file uploaded");
+
+            var url = await _cloudinaryService.UploadImageAsync(file, "");
+            return Ok(new { Url = url.Url, PublicId = url.PublicId });
+            ;
+        }
+
         //[HttpPost("image")]
-        public async Task<IActionResult> UploadImage(IFormFile file)
+        public async Task<IActionResult> UploadImageGit(IFormFile file)
+
         {
             if (file == null || file.Length == 0)
                 return BadRequest("File không hợp lệ.");
