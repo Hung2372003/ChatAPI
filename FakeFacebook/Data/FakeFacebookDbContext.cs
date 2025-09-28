@@ -19,6 +19,7 @@ namespace FakeFacebook.Data
         public DbSet<Posts> Posts { get; set; }
         public DbSet<PostComment> PostComments { get; set; }
         public DbSet<FeelingPost> FeelingPosts { get; set; }
+        public DbSet<UserToken> UserTokens { get; set; }
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {

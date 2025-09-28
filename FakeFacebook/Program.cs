@@ -1,11 +1,13 @@
 ﻿using FakeFacebook.Data;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using System.Text;
-using Microsoft.OpenApi.Models;
 using FakeFacebook.Hubs;
 using FakeFacebook.Service;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -149,7 +151,6 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddScoped<GoogleAuthService>();
 builder.Services.AddControllers();
-
 //builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("GearHostDatabase")));
 
 builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
@@ -158,7 +159,7 @@ builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
         ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQLDefaultConnection"))
     )
 );
-
+builder.Services.AddScoped<IFirebasePushService, FirebasePushService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient<GitHubUploaderSevice>();
