@@ -9,6 +9,7 @@ using FakeFacebook.Service;
 
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 var key = builder.Configuration["JwtSettings:SecretKey"] ?? "2372003HungsssDepZaiSieuCapVuTru";
 if (builder.Environment.IsDevelopment())
 {
@@ -150,14 +151,30 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddScoped<GoogleAuthService>();
 builder.Services.AddControllers();
 
-//builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("GearHostDatabase")));
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
+        options.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnection")
+        )
+    );
+}
+else
+{
+    builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
+       options.UseSqlServer(
+           builder.Configuration.GetConnectionString("MonsterASP")
+       )
+   );
+}
 
-builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("MySQLDefaultConnection"),
-        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQLDefaultConnection"))
-    )
-);
+
+//builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
+//    options.UseMySql(
+//        builder.Configuration.GetConnectionString("MySQLDefaultConnection"),
+//        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQLDefaultConnection"))
+//    )
+//);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

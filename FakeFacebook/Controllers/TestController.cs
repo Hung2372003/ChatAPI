@@ -11,16 +11,39 @@ namespace FakeFacebook.Controllers
         private readonly IConfiguration _configuration;
         private readonly FakeFacebookDbContext _context;
         private readonly GitHubUploaderSevice _githubUploader;
-        public TestController(IConfiguration configuration, FakeFacebookDbContext context, GitHubUploaderSevice githubUploader)
+         private readonly ICloudinaryService _cloudinaryService;
+        public TestController(IConfiguration configuration, FakeFacebookDbContext context, GitHubUploaderSevice githubUploader, ICloudinaryService cloudinaryService )
         {
             _configuration = configuration;
             _context = context;
             _githubUploader = githubUploader;
-
+            _cloudinaryService = cloudinaryService;
         }
 
-       //[HttpPost("image")]
-        public async Task<IActionResult> UploadImage(IFormFile file)
+
+        [HttpPost("upload-video")]
+        public async Task<IActionResult> UploadVideoCloudinary(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file uploaded");
+
+            var url = await _cloudinaryService.UploadVideoAsync(file,"");
+            return Ok(url);
+        }
+
+        [HttpPost("upload-image")]
+        public async Task<IActionResult> UploadImageCloudinary(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file uploaded");
+
+            var url = await _cloudinaryService.UploadImageAsync(file, "");
+            return Ok(new { Url = url.Url, PublicId = url.PublicId });
+            ;
+        }
+
+        //[HttpPost("image")]
+        public async Task<IActionResult> UploadImageGit(IFormFile file)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("File không hợp lệ.");

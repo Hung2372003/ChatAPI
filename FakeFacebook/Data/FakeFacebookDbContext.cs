@@ -24,28 +24,17 @@ namespace FakeFacebook.Data
         {
             if (Database.IsMySql())
             {
-                configurationBuilder.Properties<string>()
-                    .HaveColumnType("longtext");
-
-                configurationBuilder.Properties<DateTime>()
-                    .HaveColumnType("datetime(6)");
-
-                configurationBuilder.Properties<bool>()
-                    .HaveColumnType("tinyint(1)");
+                configurationBuilder.Properties<string>().HaveColumnType("longtext");
+                configurationBuilder.Properties<DateTime>().HaveColumnType("datetime(6)");
+                configurationBuilder.Properties<bool>().HaveColumnType("tinyint(1)");
             }
-            else if (Database.IsSqlServer())
-            {
-                configurationBuilder.Properties<string>()
-                    .HaveColumnType("nvarchar(max)");
-
-                configurationBuilder.Properties<DateTime>()
-                    .HaveColumnType("datetime2");
-
-                configurationBuilder.Properties<bool>()
-                    .HaveColumnType("bit");
-            }
+            //else if (Database.IsSqlServer())
+            //{
+            //    configurationBuilder.Properties<string>().HaveColumnType("nvarchar(max)");
+            //    configurationBuilder.Properties<DateTime>().HaveColumnType("datetime2");
+            //    configurationBuilder.Properties<bool>().HaveColumnType("bit");
+            //}
         }
-
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
