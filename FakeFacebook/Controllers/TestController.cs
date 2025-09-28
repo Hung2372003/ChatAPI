@@ -1,6 +1,8 @@
 ﻿using FakeFacebook.Data;
 using FakeFacebook.Models;
 using FakeFacebook.Service;
+using FirebaseAdmin;
+using FirebaseAdmin.Messaging;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -16,6 +18,7 @@ namespace FakeFacebook.Controllers
         private readonly GitHubUploaderSevice _githubUploader;
         private readonly IFirebasePushService _firebasePushService;
         private readonly ICloudinaryService _cloudinaryService;
+        private static bool _isFirebaseInitialized = false;
         public TestController(
             IConfiguration configuration,
             FakeFacebookDbContext context,
@@ -30,7 +33,13 @@ namespace FakeFacebook.Controllers
             _githubUploader = githubUploader;
             _firebasePushService = firebasePushService;
             _cloudinaryService = cloudinaryService;
-
+            if (FirebaseApp.DefaultInstance == null)
+            {
+                FirebaseApp.Create(new AppOptions
+                {
+                    Credential = GoogleCredential.FromFile("serviceAccountKey.json")
+                });
+            }
         }
 
 
@@ -124,43 +133,19 @@ namespace FakeFacebook.Controllers
         [HttpPost("send")]
         public async Task<IActionResult> SendNotification([FromBody] string fcmToken)
         {
-            string pathToJson = Path.Combine(Directory.GetCurrentDirectory(), "serviceAccountKey.json");
-
-            GoogleCredential credential;
-            using (var stream = new FileStream(pathToJson, FileMode.Open, FileAccess.Read))
+            var message = new Message()
             {
-                credential = GoogleCredential.FromStream(stream)
-                    .CreateScoped("https://www.googleapis.com/auth/firebase.messaging");
-            }
-
-            var accessToken = await credential.UnderlyingCredential.GetAccessTokenForRequestAsync();
-
-            var message = new
-            {
-                message = new
+                Token = fcmToken,
+                Notification = new Notification()
                 {
-                    token = fcmToken,
-                    notification = new
-                    {
-                        title = "Hello from .NET",
-                        body = "This is a test push notification 🚀"
-                    }
+                    Title = "Hello from .NET 🚀",
+                    Body = "This is a test push notification via FirebaseAdmin SDK"
                 }
             };
 
-            var json = JsonConvert.SerializeObject(message);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
 
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-            var projectId = "ketlook-5edec"; // lấy đúng project_id trong serviceAccountKey.json
-            var url = $"https://fcm.googleapis.com/v1/projects/{projectId}/messages:send";
-
-            var response = await client.PostAsync(url, content);
-            var result = await response.Content.ReadAsStringAsync();
-
-            return Ok(result);
+            return Ok(new { MessageId = response });
         }
 
     }

@@ -375,7 +375,15 @@ namespace FakeFacebook.Controllers.AppUser
 
             return new JsonResult(ListUser);
         }
-
+        [HttpPost("GetUserIdByGroup")]
+        public JsonResult GetUserIdByGroup([FromBody] int groupChatId)
+        {
+            var msg = new Message() { Title = "", Error = false, Object = "" };
+            var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var get = _context.GroupMembers.FirstOrDefault(x => x.GroupChatId == groupChatId && x.IsDeleted == false && x.MemberCode != StaticUser);
+            msg.Object = new {UserId = get?.MemberCode ?? 0};
+            return new JsonResult(msg);
+        }
         static bool ContainsCharIgnoreCaseAndDiacritics(string input, string character)
         {
             string normalizedInput = RemoveDiacritics(input.ToLower());

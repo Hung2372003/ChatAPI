@@ -39,6 +39,14 @@ namespace FakeFacebook.Controllers.FirebaseManagerment
 
             return Ok(new { message = "Token saved successfully" });
         }
+        [HttpPost("getTokenById")]
+        public IActionResult getTokenById([FromBody] DeviceTokenDto dto)
+        {
+            var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var token = _context.UserTokens
+                .FirstOrDefault(t => t.UserId == dto.UserId);
+            return Ok(new { Token = token.Token });
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()

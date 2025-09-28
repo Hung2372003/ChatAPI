@@ -7,17 +7,12 @@ by editing this MSBuild file. In order to learn more about this please visit htt
   <PropertyGroup>
     <TimeStampOfAssociatedLegacyPublishXmlFile />
     <EncryptedPassword>AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAA2+sixxlTzkitMHunjD1HAQAAAAACAAAAAAAQZgAAAAEAACAAAAC7Z2JN21YSJEZh0uYvh3b0w7wBPFVZXQaWNgudu6Bq1QAAAAAOgAAAAAIAACAAAABnJSrSvcZPwF8epPNTjuR8i2H1lBHMsAOUQN0FQjHzbyAAAADOUJMHxUCNmauzE3J+oz8h2f9/lWtS5/UAierGUbWCeEAAAAAsVd9uhTv+WfINF7FluE7vHa/0VY14oGqUlgc+QDQgFv9xIqoPaKYxE2Z+fjL8Z5NwKq7dDGIveRDRiqjSAF5C</EncryptedPassword>
-    <History>True|2025-09-23T03:11:09.4588180Z||;True|2025-09-23T09:50:22.2536396+07:00||;True|2025-09-23T09:46:26.8011267+07:00||;False|2025-09-23T09:45:31.2135485+07:00||;True|2025-09-23T09:07:39.8370428+07:00||;True|2025-09-23T08:59:21.7279289+07:00||;</History>
+    <History>True|2025-09-28T21:00:55.7481088Z||;True|2025-09-29T03:57:32.5873121+07:00||;True|2025-09-29T03:31:55.9872423+07:00||;False|2025-09-29T03:27:42.4857809+07:00||;True|2025-09-23T10:11:09.4588180+07:00||;True|2025-09-23T09:50:22.2536396+07:00||;True|2025-09-23T09:46:26.8011267+07:00||;False|2025-09-23T09:45:31.2135485+07:00||;True|2025-09-23T09:07:39.8370428+07:00||;True|2025-09-23T08:59:21.7279289+07:00||;</History>
     <LastFailureDetails />
   </PropertyGroup>
   <ItemGroup>
     <DestinationConnectionStrings Include="MonsterASP">
       <Value>Server=db26635.databaseasp.net%3bDatabase=db26635%3bUser Id=db26635%3bPassword=sY-5%3fj6Kw9C+%3bEncrypt=False%3bMultipleActiveResultSets=True%3b</Value>
     </DestinationConnectionStrings>
-  </ItemGroup>
-  <ItemGroup>
-    <EFMigrations Include="FakeFacebook.Data.FakeFacebookDbContext">
-      <Value>Server=db26635.databaseasp.net%3bDatabase=db26635%3bUser Id=db26635%3bPassword=sY-5%3fj6Kw9C+%3bEncrypt=False%3bMultipleActiveResultSets=True%3b</Value>
-    </EFMigrations>
   </ItemGroup>
 </Project>
