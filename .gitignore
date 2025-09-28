@@ -25,3 +25,4 @@ FakeFacebook/serviceAccountKey.json
 
 # Publish output
 publish/
+.csproj
