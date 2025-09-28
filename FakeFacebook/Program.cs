@@ -142,7 +142,7 @@ builder.Services.AddControllers();
 
 //builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseMySql( builder.Configuration.GetConnectionString("MySQLDefaultConnection"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQLDefaultConnection"))));
 if (builder.Environment.IsDevelopment())
-    builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer( builder.Configuration.GetConnectionString("DefaultConnection")));
+    builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer( builder.Configuration.GetConnectionString("MonsterASPLocalDev")));
 else
     builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer( builder.Configuration.GetConnectionString("MonsterASP")));
 

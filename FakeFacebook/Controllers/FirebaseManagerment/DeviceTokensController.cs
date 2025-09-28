@@ -32,7 +32,7 @@ namespace FakeFacebook.Controllers.FirebaseManagerment
 
             if (!exists)
             {
-                var token = new UserToken { Token = dto.Token, UserId = StaticUser.ToString() };
+                var token = new UserToken { Token = dto.Token, UserId = StaticUser.ToString(), CreatedTime = DateTime.UtcNow };
                 _context.UserTokens.Add(token);
                 await _context.SaveChangesAsync();
             }
