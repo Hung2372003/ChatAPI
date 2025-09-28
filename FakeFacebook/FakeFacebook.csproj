@@ -10,7 +10,10 @@
 
   <ItemGroup>
     <PackageReference Include="CloudinaryDotNet" Version="1.27.7" />
+<<<<<<< HEAD
     <PackageReference Include="FirebaseAdmin" Version="3.4.0" />
+=======
+>>>>>>> 89bf7960458847443746f024b6fe808715c07805
     <PackageReference Include="Google.Apis.Auth" Version="1.70.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.17" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.6" />

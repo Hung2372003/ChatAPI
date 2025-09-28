@@ -23,6 +23,7 @@ namespace FakeFacebook.Controllers
             ICloudinaryService cloudinaryService,
             IFirebasePushService firebasePushService
             )
+
         {
             _configuration = configuration;
             _context = context;
@@ -52,10 +53,6 @@ namespace FakeFacebook.Controllers
             await _firebasePushService.SendToUserAsync(req.UserId, req.Title, req.Body, req.Data);
             return Ok(new { success = true, message = "Notification sent" });
         }
-
-
-
-
 
 
 

@@ -173,6 +173,7 @@ else
 }
 
 
+
 //builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
 //    options.UseMySql(
 //        builder.Configuration.GetConnectionString("MySQLDefaultConnection"),
@@ -196,8 +197,6 @@ else
        )
    );
 }
-
-
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
