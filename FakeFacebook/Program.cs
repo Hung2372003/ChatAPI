@@ -155,6 +155,23 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddScoped<GoogleAuthService>();
 builder.Services.AddControllers();
 
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
+        options.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnection")
+        )
+    );
+}
+else
+{
+    builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
+       options.UseSqlServer(
+           builder.Configuration.GetConnectionString("MonsterASP")
+       )
+   );
+}
+
 
 //builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
 //    options.UseMySql(
@@ -162,8 +179,6 @@ builder.Services.AddControllers();
 //        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQLDefaultConnection"))
 //    )
 //);
-
-
 
 if (builder.Environment.IsDevelopment())
 {

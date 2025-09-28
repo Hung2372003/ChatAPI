@@ -1,11 +1,27 @@
+# Visual Studio
 .vs/
-/FakeFacebook/bin/
-/FakeFacebook/obj/
-/bin/
-/obj/
-FakeFacebook/bin
-FakeFacebook/obj
-FakeFacebook/appsettings.jsono b j / 
+
+# Build output
+bin/
+obj/
+FakeFacebook/bin/
+FakeFacebook/obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# App settings (local only)
+FakeFacebook/appsettings.json
+
+# Secrets
 serviceAccountKey.json
- 
- 
+FakeFacebook/serviceAccountKey.json
+
+# Logs
+*.log
+
+# Publish output
+publish/

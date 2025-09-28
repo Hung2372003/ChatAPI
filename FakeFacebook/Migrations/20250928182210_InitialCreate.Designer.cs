@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FakeFacebook.Migrations
 {
     [DbContext(typeof(FakeFacebookDbContext))]
-    [Migration("20250923024008_InitialCreateMSSQL")]
-    partial class InitialCreateMSSQL
+    [Migration("20250928182210_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -552,6 +552,35 @@ namespace FakeFacebook.Migrations
                         .HasName("PK_USER_INFORMATION");
 
                     b.ToTable("USER_INFORMATION");
+                });
+
+            modelBuilder.Entity("FakeFacebook.Models.UserToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CREATED_TIME");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("TOKEN");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("USER_ID");
+
+                    b.HasKey("Id")
+                        .HasName("PK_USER_TOKENS");
+
+                    b.ToTable("USER_TOKENS");
                 });
 #pragma warning restore 612, 618
         }

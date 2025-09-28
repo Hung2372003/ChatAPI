@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace FakeFacebook.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreateMSSQL : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -233,6 +233,21 @@ namespace FakeFacebook.Migrations
                 {
                     table.PrimaryKey("PK_USER_INFORMATION", x => x.ID);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "USER_TOKENS",
+                columns: table => new
+                {
+                    ID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    USER_ID = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TOKEN = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CREATED_TIME = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_USER_TOKENS", x => x.ID);
+                });
         }
 
         /// <inheritdoc />
@@ -270,6 +285,9 @@ namespace FakeFacebook.Migrations
 
             migrationBuilder.DropTable(
                 name: "USER_INFORMATION");
+
+            migrationBuilder.DropTable(
+                name: "USER_TOKENS");
         }
     }
 }
