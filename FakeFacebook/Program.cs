@@ -68,28 +68,18 @@ builder.Services.AddAuthentication(options =>
         {
             var accessToken = context.Request.Query["access_token"];
             var path = context.HttpContext.Request.Path;
-            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hub"))
-            {
-                context.Token = accessToken;
-            }
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hub")) context.Token = accessToken;
             else if (context.Request.Headers.ContainsKey("Authorization"))
             {
                 // Ưu tiên lấy token từ Authorization header
                 var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-                if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
-                {
-                    context.Token = authHeader["Bearer ".Length..].Trim();
-                }
-              
+                if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ")) context.Token = authHeader["Bearer ".Length..].Trim();       
             }
             else
             {
                 // Nếu không có header, lấy từ cookie
                 var tokenFromCookie = context.Request.Cookies["access_token"];
-                if (!string.IsNullOrEmpty(tokenFromCookie))
-                {
-                    context.Token = tokenFromCookie;
-                }
+                if (!string.IsNullOrEmpty(tokenFromCookie))  context.Token = tokenFromCookie;
             }
             return Task.CompletedTask;
         },
@@ -107,9 +97,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("ViewSensitiveDataPolicy", policy =>
-        policy.RequireRole("Admin")
-              .RequireClaim("Permission", "ViewSensitiveData"));
+   options.AddPolicy("ViewSensitiveDataPolicy", policy => policy.RequireRole("Admin").RequireClaim("Permission", "ViewSensitiveData"));
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -152,48 +140,11 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddScoped<GoogleAuthService>();
 builder.Services.AddControllers();
 
+//builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseMySql( builder.Configuration.GetConnectionString("MySQLDefaultConnection"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQLDefaultConnection"))));
 if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
-        options.UseSqlServer(
-            builder.Configuration.GetConnectionString("DefaultConnection")
-        )
-    );
-}
+    builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer( builder.Configuration.GetConnectionString("DefaultConnection")));
 else
-{
-    builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
-       options.UseSqlServer(
-           builder.Configuration.GetConnectionString("MonsterASP")
-       )
-   );
-}
-
-
-
-//builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
-//    options.UseMySql(
-//        builder.Configuration.GetConnectionString("MySQLDefaultConnection"),
-//        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQLDefaultConnection"))
-//    )
-//);
-
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
-        options.UseSqlServer(
-            builder.Configuration.GetConnectionString("DefaultConnection")
-        )
-    );
-}
-else
-{
-    builder.Services.AddDbContext<FakeFacebookDbContext>(options =>
-       options.UseSqlServer(
-           builder.Configuration.GetConnectionString("MonsterASP")
-       )
-   );
-}
+    builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer( builder.Configuration.GetConnectionString("MonsterASP")));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
