@@ -1,5 +1,6 @@
 ﻿using FakeFacebook.Commom;
 using FakeFacebook.Data;
+using FakeFacebook.DTOs;
 using FakeFacebook.Models;
 using FakeFacebook.ModelViewControllers;
 using FakeFacebook.ModelViewControllers.AccountSecurity;
@@ -17,6 +18,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
     public class UserSecurityController : ControllerBase
     {
         private readonly string? _key;
+        public readonly string? _getImageDataLink;
         private readonly FakeFacebookDbContext _context;
         private readonly JwtTokenService _jwtService;
         private GoogleAuthService _googleAuthService;
@@ -32,6 +34,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
                                       ) {
             _config = configuration;
             _key = configuration["JwtSettings:SecretKey"];
+            _getImageDataLink = configuration["Git:GetImageDataLink"];
             _context = context;
             _jwtService = jwtService;
             _googleAuthService = googleAuthService;
@@ -48,8 +51,12 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 loginModel.Username = loginModel.Username;
                 loginModel.Password = loginModel.Password;
                 var CheckUser = _context.UserAccounts.FirstOrDefault(x => x.UserName == loginModel.Username);
+                
                 if ( CheckUser!=null && CheckUser.UserPassword == loginModel.Password ) {
-                    var token = _jwtService.GenerateJwtToken(CheckUser.UserCode, CheckUser?.Role ?? "User", CheckUser?.Permission ?? "NOT");
+                    var userIfo = _context.UserInformations.FirstOrDefault(x => x.Id == CheckUser.UserCode);
+                    var Name = userIfo?.Name;
+                    var Avatar = $"{_getImageDataLink}/{userIfo.Avatar}";
+                    var token = _jwtService.GenerateJwtToken(CheckUser.UserCode, CheckUser?.Role ?? "User", CheckUser?.Permission ?? "NOT", Name ?? "", Avatar);
                     Response.Cookies.Append("access_token", token, new CookieOptions
                     {
                         HttpOnly = true,
@@ -118,7 +125,8 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 _context.UserAccounts.Add(AddAcc);
                 _context.SaveChanges();
 
-                var token = _jwtService.GenerateJwtToken(AddAcc.UserCode, AddAcc.Role, AddAcc.Permission);
+                var Avatar = $"{_getImageDataLink}/{AddInfor.Avatar}";
+                var token = _jwtService.GenerateJwtToken(AddAcc.UserCode, AddAcc.Role, AddAcc.Permission,AddInfor.Name ?? "",Avatar);
                 Response.Cookies.Append("access_token", token, new CookieOptions
                 {
                     HttpOnly = true,
@@ -155,7 +163,10 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 else
                 {
                   
-                    var token = _jwtService.GenerateJwtToken(check.UserCode, (check.Role != null)?check.Role:"User", (check.Permission != null)?check.Permission:"NOT");
+                    var userIfo = _context.UserInformations.FirstOrDefault(x => x.Id == check.UserCode);
+                    var Name = userIfo?.Name;
+                    var Avatar = $"{_getImageDataLink}/{userIfo?.Avatar}";
+                    var token = _jwtService.GenerateJwtToken(check.UserCode, (check.Role != null)?check.Role:"User", (check.Permission != null)?check.Permission:"NOT",Name??"", Avatar);
                    Response.Cookies.Append("access_token", token, new CookieOptions
                     { 
                         HttpOnly = true,
@@ -216,7 +227,9 @@ namespace FakeFacebook.Controllers.AccountSecurity
                     AddAcc.Permission = "NOT";
                     _context.UserAccounts.Add(AddAcc);
                     _context.SaveChanges();
-                    var token = _jwtService.GenerateJwtToken(AddAcc.UserCode, AddAcc.Role, AddAcc.Permission);
+                    
+                    var Avatar = $"{_getImageDataLink}/{AddInfor.Avatar}";
+                    var token = _jwtService.GenerateJwtToken(AddAcc.UserCode, AddAcc.Role, AddAcc.Permission,AddInfor.Name, Avatar);
                     Response.Cookies.Append("access_token", token, new CookieOptions
                     {
                         HttpOnly = true,
@@ -269,9 +282,34 @@ namespace FakeFacebook.Controllers.AccountSecurity
                 SameSite = SameSiteMode.None
             });
 
+
             return Ok(new { Message = "Đăng xuất thành công" });
         }
 
+        [HttpPost("LogoutApp")]
+        public IActionResult LogouApp([FromBody] DeviceTokenDto obj)
+        {
+            var msg = new Message() { Error = false, Title = "", Object = "" };
+            var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            try
+            {
+                var check = _context.UserTokens.Where(x => x.Token == obj.Token && x.UserId == StaticUser.ToString()).ToList();
+                if (check != null)
+                {
+                    _context.UserTokens.RemoveRange(check);
+                    _context.SaveChanges();
+                }
+                msg.Title = "Đăng xuất thành công";
+            }
+            catch(Exception e)
+            {
+                msg.Error = true;
+                msg.Title = e.Message;
+                return Ok(msg);
+            }
+         
+            return Ok(msg);
+        }
 
 
     }

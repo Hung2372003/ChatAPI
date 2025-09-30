@@ -14,7 +14,7 @@ namespace FakeFacebook.Service
         }
 
 
-        public string GenerateJwtToken(int userId, string role, string permission)
+        public string GenerateJwtToken(int userId, string role, string permission,string name , string? avatar)
         {
             // Lấy thông tin cấu hình từ appsettings.json
             var jwtSettings = _configuration.GetSection("JwtSettings");
@@ -31,7 +31,9 @@ namespace FakeFacebook.Service
             {
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
                 new Claim(ClaimTypes.Role, role),
-                new Claim("Permission", permission)
+                new Claim("Permission", permission),
+                new Claim(ClaimTypes.Name, name),
+                new Claim("Avatar", avatar ?? string.Empty)
             };
 
             var tokenDescriptor = new SecurityTokenDescriptor

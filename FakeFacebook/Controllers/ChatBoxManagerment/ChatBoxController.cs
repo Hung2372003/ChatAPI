@@ -478,13 +478,34 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             return new JsonResult(msg);
         }
 
-
-      
-
-
-
+        public class GroupRequest
+        {
+            public int GroupChatId { get; set; }
+        }
+        [HttpPost("GetAllUserByGroupChatId")]
+        public JsonResult GetUserIdByGroup([FromBody] GroupRequest groupChatId)
+        {
+            var msg = new Message() { Title = "", Error = false, Object = "" };
+            var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            try
+            {
+                var get = from a in _context.GroupMembers.Where(x => x.GroupChatId == groupChatId.GroupChatId && x.IsDeleted == false && x.MemberCode != StaticUser)
+                          join b in _context.UserInformations.Where(x => x.IsDeleted == false)
+                          on a.MemberCode equals b.Id
+                          select new
+                          {
+                              b.Id,
+                              b.Name,
+                              Avatar = (b.Avatar != null) ? $"{_getImageDataLink}/{b.Avatar}" : $"{_getImageDataLink}/{_foderSaveAvatarImage}/mostavatar.png",
+                          };
+                msg.Object = get.ToList();
+            }
+            catch(Exception e)
+            {
+                msg.Error = true;
+                msg.Title = e.Message;
+            }   
+            return new JsonResult(msg);
+        }
     }
-
-
-
 }
