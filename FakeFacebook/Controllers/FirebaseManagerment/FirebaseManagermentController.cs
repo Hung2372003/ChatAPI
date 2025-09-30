@@ -27,15 +27,14 @@ namespace FakeFacebook.Controllers.FirebaseManagerment
         public FirebaseManagermentController(FakeFacebookDbContext context, IHttpClientFactory httpClientFactory)
         {
             _context = context;
-            if (FirebaseApp.DefaultInstance == null)
-            {
-                FirebaseApp.Create(new AppOptions
-                {
-                    Credential = GoogleCredential.FromFile("serviceAccountKey.json")
-                });
-            }
-
-            _httpClient = httpClientFactory.CreateClient(); ;
+            _httpClient = httpClientFactory.CreateClient();
+            //if (FirebaseApp.DefaultInstance == null)
+            //{
+            //    FirebaseApp.Create(new AppOptions
+            //    {
+            //        Credential = GoogleCredential.FromFile("serviceAccountKey.json")
+            //    });
+            //}
         }
 
         [HttpPost("SaveTokenDevices")]
@@ -84,17 +83,17 @@ namespace FakeFacebook.Controllers.FirebaseManagerment
             return Ok(tokens);
         }
     
-        public class MessagePushNotification
-        {
-            public string? Message { get; set; }
-            public string? UserId { get; set; }
-            public string? TokenDevice { get; set; }
-        }
+
         [HttpPost("SenNotifMessage")]
         [Authorize]
         
         public async Task<IActionResult> SendNotificationBatch([FromBody] SenNotifMessageDto data)
         {
+            if (FirebaseMessaging.DefaultInstance == null)
+            {
+                return BadRequest(new { title = "❌ Firebase not initialized. DefaultInstance is null." });
+            }
+
             var StaticUser = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var NameUser = HttpContext.User.FindFirst(ClaimTypes.Name)?.Value;
             var Avatar = User.FindFirstValue("Avatar");
@@ -128,20 +127,11 @@ namespace FakeFacebook.Controllers.FirebaseManagerment
                     Data = new Dictionary<string, string>
                         {
                             { "title", data.Title ?? (NameUser ?? "Dcu chuyền cái title vào") },
-                            { "body", data.Notification },
+                            { "body", data.Notification ?? "" },
                             { "image", (Avatar != null) ? avatarUrl : string.Empty },
                             { "notificationId", (StaticUser != null) ? StaticUser : string.Empty }
 
                         },
-                    //Android = new AndroidConfig
-                    //{
-                    //    Priority = Priority.High,
-                    //    Notification = new AndroidNotification
-                    //    {
-                    //        ChannelId = "default_channel",
-                    //        Sound = "default"
-                    //    }
-                    //}
                 };
 
 
@@ -168,34 +158,6 @@ namespace FakeFacebook.Controllers.FirebaseManagerment
             {
                 return new JsonResult(new { Title = e.Message });
             }
-        }
-        [HttpGet("resize")]
-        public async Task<IActionResult> ResizeAvatar([FromQuery] string url, [FromQuery] int width = 128, [FromQuery] int height = 128)
-        {
-            if (string.IsNullOrEmpty(url))
-                return BadRequest("Missing url");
-
-            try
-            {
-                // 1. Download ảnh từ GitHub
-                var imageBytes = await _httpClient.GetByteArrayAsync(url);
-
-                // 2. Resize ảnh
-                using var image = Image.Load(imageBytes);
-                image.Mutate(x => x.Resize(width, height));
-
-                // 3. Save ảnh vào MemoryStream
-                using var ms = new MemoryStream();
-                await image.SaveAsync(ms, new PngEncoder());
-                ms.Position = 0;
-
-                // 4. Trả ảnh trực tiếp
-                return File(ms.ToArray(), "image/png");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-        }
+        }      
     }
 }

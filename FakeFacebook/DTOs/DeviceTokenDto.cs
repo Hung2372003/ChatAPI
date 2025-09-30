@@ -12,4 +12,10 @@
         public string? UserId { get; set; }
 
     }
+    public class MessagePushNotification
+    {
+        public string? Message { get; set; }
+        public string? UserId { get; set; }
+        public string? TokenDevice { get; set; }
+    }
 }

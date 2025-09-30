@@ -1,6 +1,8 @@
 ﻿using FakeFacebook.Data;
 using FakeFacebook.Hubs;
 using FakeFacebook.Service;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -10,8 +12,9 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
-builder.Services.AddScoped<IFirebasePushService, FirebasePushService>();
+//builder.Services.AddScoped<IFirebasePushService, FirebasePushService>();
 var key = builder.Configuration["JwtSettings:SecretKey"] ?? "2372003HungsssDepZaiSieuCapVuTru";
+builder.Services.AddFirebase();
 if (builder.Environment.IsDevelopment())
 {
     builder.WebHost.UseUrls("https://0.0.0.0:7158", "http://0.0.0.0:5176");
