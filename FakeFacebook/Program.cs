@@ -14,7 +14,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 //builder.Services.AddScoped<IFirebasePushService, FirebasePushService>();
 var key = builder.Configuration["JwtSettings:SecretKey"] ?? "2372003HungsssDepZaiSieuCapVuTru";
-builder.Services.AddFirebase();
+bool isRunningMigration = builder.Configuration["DOTNET_RUNNING_IN_MIGRATION"] == "true";
+
+if (!isRunningMigration){ builder.Services.AddFirebase();}
 if (builder.Environment.IsDevelopment())
 {
     builder.WebHost.UseUrls("https://0.0.0.0:7158", "http://0.0.0.0:5176");
@@ -143,11 +145,14 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddScoped<GoogleAuthService>();
 builder.Services.AddControllers();
 
-//builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseMySql( builder.Configuration.GetConnectionString("MySQLDefaultConnection"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQLDefaultConnection"))));
+//if (builder.Environment.IsDevelopment())
+//    builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseMySql(builder.Configuration.GetConnectionString("MonsterASPMySQLDEV"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MonsterASPMySQLDEV"))));
+//else
+//    builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseMySql(builder.Configuration.GetConnectionString("MonsterASPMySQL"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MonsterASPMySQL"))));
 if (builder.Environment.IsDevelopment())
-    builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer( builder.Configuration.GetConnectionString("MonsterASPLocalDev")));
+    builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("MonsterASPLocalDev")));
 else
-    builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer( builder.Configuration.GetConnectionString("MonsterASP")));
+    builder.Services.AddDbContext<FakeFacebookDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("MonsterASP")));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
