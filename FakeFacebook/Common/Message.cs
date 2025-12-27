@@ -1,4 +1,4 @@
-﻿namespace FakeFacebook.Commom
+﻿namespace FakeFacebook.Common
 {
     public class Message
     {
