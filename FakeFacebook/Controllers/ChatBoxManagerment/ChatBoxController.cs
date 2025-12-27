@@ -1,5 +1,4 @@
-﻿
-using FakeFacebook.Common;
+﻿using FakeFacebook.Common;
 using FakeFacebook.Data;
 using FakeFacebook.Hubs;
 using FakeFacebook.Models;
@@ -24,6 +23,24 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
         private readonly string? _foderSaveAvatarImage;
         private readonly string? _foderSaveChatFile;
         private readonly string? _foderSaveGroupAvatarImage;
+        private readonly string? _aesKey;
+        private string TryDecrypt(string content, string key)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(content) || string.IsNullOrEmpty(key))
+                    return content;
+                // Kiểm tra độ dài tối thiểu (IV 16 bytes + ít nhất 1 block)
+                var buffer = Convert.FromBase64String(content);
+                if (buffer.Length < 16 + 16) // 16 bytes IV + 16 bytes block
+                    return content;
+                return SecurityHelper.DecryptAes(content, key);
+            }
+            catch
+            {
+                return content;
+            }
+        }
         public ChatBoxController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderSevice githubUploader, ICloudinaryService cloudinaryService)
         {
             _context = context;
@@ -33,6 +50,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             _foderSaveChatFile = "ChatBox";
             _foderSaveGroupAvatarImage = "Images/GroupAvatar";
             _cloudinaryService = cloudinaryService;
+            _aesKey = configuration["AESKey"];
         }
 
         // Get------------------------------------------------------
@@ -204,37 +222,48 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                             msg.Title = "NotMess";
                             return new JsonResult(msg);
                         }
-                        var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == GroupChatId && (data.MessId == null || x.Id < data.MessId)).OrderByDescending(x => x.Id).Take(20)
-                                   join b in _context.FileChats on a.FileCode equals b.FileCode into b1
-                                   from b in b1.DefaultIfEmpty()
-                                   group new {a,b}
-                                   by new {
-                                    a.Id,
-                                    a.CreatedBy,
-                                    a.Content,
-                                    a.CreatedTime,
-                                    a.GroupChatId,
-                                    a.FileCode,
-                                   } into e
-                                   select new
-                                   {
-                                       e.Key.Id,                                     
-                                       e.Key.CreatedBy,
-                                       e.Key.Content,
-                                       e.Key.CreatedTime,
-                                       e.Key.FileCode,
-                                       ListFile=e.Where(x=>x.b!=null).Select(x => new
-                                       {
-                                           x.b.Id,
-                                           x.b.Name,
-                                           Path = $"{_getImageDataLink}/{x.b.Path}",
-                                           x.b.Type,
-                                       }).ToList(),
+                        var messRaw = (from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId && (data.MessId == null || x.Id < data.MessId)).OrderByDescending(x => x.Id).Take(20)
+                            join b in _context.FileChats on a.FileCode equals b.FileCode into b1
+                            from b in b1.DefaultIfEmpty()
+                            group new { a, b }
+                            by new
+                            {
+                                a.Id,
+                                a.CreatedBy,
+                                a.Content,
+                                a.CreatedTime,
+                                a.GroupChatId,
+                                a.FileCode
+                            } into e
+                            select new
+                            {
+                                e.Key.Id,
+                                e.Key.CreatedBy,
+                                e.Key.Content, // chưa giải mã!
+                                e.Key.CreatedTime,
+                                e.Key.FileCode,
+                                ListFile = e.Where(x => x.b != null).Select(x => new
+                                {
+                                    x.b.Id,
+                                    x.b.Name,
+                                    Path = $"{_getImageDataLink}/{x.b.Path}",
+                                    x.b.Type,
+                                    GroupDouble = true,
+                                }).ToList(),
+                            }).ToList();
 
-                                   };
+                        var mess = messRaw.Select(m => new
+                            {
+                                m.Id,
+                                m.CreatedBy,
+                                Content = TryDecrypt(m.Content, _aesKey),
+                                m.CreatedTime,
+                                m.FileCode,
+                                m.ListFile
+                            }).ToList();
 
                         msg.Title = "MessOk";
-                        msg.Object = mess.ToList();    
+                        msg.Object = mess;    
                         
                         //msg.Id = GroupChatId;
                         msg.PreventiveObject = new
@@ -266,38 +295,48 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                     }
                     _context.SaveChanges();
 
-                    var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId && (data.MessId == null || x.Id < data.MessId)).OrderByDescending(x => x.Id).Take(20)
-                               join b in _context.FileChats on a.FileCode equals b.FileCode into b1
-                               from b in b1.DefaultIfEmpty()
-                               group new { a, b }
-                               by new
-                               {
-                                   a.Id,
-                                   a.CreatedBy,
-                                   a.Content,
-                                   a.CreatedTime,
-                                   a.GroupChatId,
-                                   a.FileCode
-                               } into e
-                               select new
-                               {
-                                   e.Key.Id,
-                                   e.Key.CreatedBy,
-                                   e.Key.Content,
-                                   e.Key.CreatedTime,
-                                   e.Key.FileCode,
-                                   ListFile = e.Where(x => x.b != null).Select(x => new
-                                   {
-                                       x.b.Id,
-                                       x.b.Name,
-                                       Path= $"{_getImageDataLink}/{x.b.Path}",
-                                       x.b.Type,
-                                       GroupDouble = true,
-                                   }).ToList(),
+                    var messRaw = (from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId && (data.MessId == null || x.Id < data.MessId)).OrderByDescending(x => x.Id).Take(20)
+                        join b in _context.FileChats on a.FileCode equals b.FileCode into b1
+                        from b in b1.DefaultIfEmpty()
+                        group new { a, b }
+                        by new
+                        {
+                            a.Id,
+                            a.CreatedBy,
+                            a.Content,
+                            a.CreatedTime,
+                            a.GroupChatId,
+                            a.FileCode
+                        } into e
+                        select new
+                        {
+                            e.Key.Id,
+                            e.Key.CreatedBy,
+                            e.Key.Content, // chưa giải mã!
+                            e.Key.CreatedTime,
+                            e.Key.FileCode,
+                            ListFile = e.Where(x => x.b != null).Select(x => new
+                            {
+                                x.b.Id,
+                                x.b.Name,
+                                Path = $"{_getImageDataLink}/{x.b.Path}",
+                                x.b.Type,
+                                GroupDouble = true,
+                            }).ToList(),
+                        }).ToList();
 
-                               };
+                    var mess = messRaw.Select(m => new
+                        {
+                            m.Id,
+                            m.CreatedBy,
+                            Content = TryDecrypt(m.Content, _aesKey),
+                            m.CreatedTime,
+                            m.FileCode,
+                            m.ListFile
+                        }).ToList();
+
                     msg.Title = "MessOk";
-                    msg.Object = mess.ToList();
+                    msg.Object = mess;
                     //msg.Id = data.GroupChatId;
                     msg.PreventiveObject = new
                     {
@@ -326,10 +365,9 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             // Nếu muốn tắt xử lý này, chỉ cần comment lại các dòng dưới đây
             if (ojb != null)
             {
-                if (ojb.Content != null)
-                {
-                    ojb.Content = SecurityHelper.SanitizeInput(ojb.Content); // chống XSS
-                }
+                 ojb.Content = SecurityHelper.SanitizeInput(ojb.Content);
+                    if (!string.IsNullOrEmpty(_aesKey))
+                        ojb.Content = SecurityHelper.EncryptAes(ojb.Content, _aesKey);
                 // Nếu có thêm trường string khác cần chống XSS, thêm vào đây
             }
             var msg = new Message { Id = 0, Error = false, Title = "", Object = new List<object>() };
