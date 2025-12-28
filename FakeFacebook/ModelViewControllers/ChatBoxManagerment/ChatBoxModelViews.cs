@@ -15,8 +15,7 @@
         public int? MessId { get; set; }
         public int? Limit { get; set; }
         public int? Offset { get; set; }
-     
-        public string? RASKeyPulic { get; set; }
+        public string? RSAPublicKey { get; set; }
         //public int PageSize { get; set; }
 
     }
