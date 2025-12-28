@@ -4,7 +4,6 @@ using FakeFacebook.Hubs;
 using FakeFacebook.Models;
 using FakeFacebook.ModelViewControllers.ChatBox;
 using FakeFacebook.ModelViewControllers.ChatBoxManagerment;
-using FakeFacebook.ModelViews.ChatOptimized;
 using FakeFacebook.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
