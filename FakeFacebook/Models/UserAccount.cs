@@ -22,5 +22,7 @@ namespace FakeFacebook.Models
         public string? Permission { get; set; }
         public string? Provider { get; set; }
         public string? ProviderSub { get; set; }
+        public byte[]? PasswordHash { get; set; }
+        public byte[]? PasswordSalt { get; set; }
     }
 }

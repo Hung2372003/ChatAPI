@@ -1,4 +1,5 @@
-﻿using FakeFacebook.Commom;
+﻿
+using FakeFacebook.Common;
 using FakeFacebook.Data;
 using FakeFacebook.Models;
 using FakeFacebook.ModelViewControllers;
@@ -219,6 +220,10 @@ namespace FakeFacebook.Controllers.Post
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             try
             {
+                // --- BỔ SUNG: Làm sạch dữ liệu đầu vào để chống XSS ---
+                // Nếu muốn tắt xử lý này, chỉ cần comment lại dòng dưới đây
+                data.Content = SecurityHelper.SanitizeInput(data.Content); // chống XSS
+
                 var post = _context.Posts.FirstOrDefault(x => x.Id == data.PostCode && x.IsDeleted == false);
                 if (post != null) {
                     post.CommentNumber = post.CommentNumber + 1;
