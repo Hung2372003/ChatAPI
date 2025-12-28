@@ -1,4 +1,4 @@
-﻿using FakeFacebook.Commom;
+﻿using FakeFacebook.Common;
 using FakeFacebook.Models;
 using FakeFacebook.ModelViews.ChatOptimized;
 using Microsoft.EntityFrameworkCore;

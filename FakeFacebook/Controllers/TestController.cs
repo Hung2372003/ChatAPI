@@ -15,14 +15,14 @@ namespace FakeFacebook.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly FakeFacebookDbContext _context;
-        private readonly GitHubUploaderSevice _githubUploader;
+        private readonly GitHubUploaderService _githubUploader;
         private readonly IFirebasePushService _firebasePushService;
         private readonly ICloudinaryService _cloudinaryService;
         private static bool _isFirebaseInitialized = false;
         public TestController(
             IConfiguration configuration,
             FakeFacebookDbContext context,
-            GitHubUploaderSevice githubUploader,
+            GitHubUploaderService githubUploader,
             ICloudinaryService cloudinaryService,
             IFirebasePushService firebasePushService
             )

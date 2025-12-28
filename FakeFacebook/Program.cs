@@ -159,7 +159,7 @@ else
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddHttpClient<GitHubUploaderSevice>();
+builder.Services.AddHttpClient<GitHubUploaderService>();
 
 var app = builder.Build();
 app.UseSwagger();

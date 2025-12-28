@@ -20,6 +20,9 @@ FakeFacebook/appsettings.json
 serviceAccountKey.json
 FakeFacebook/serviceAccountKey.json
 
+# Google Firebase config
+FakeFacebook/google-services.json
+
 # Logs
 *.log
 

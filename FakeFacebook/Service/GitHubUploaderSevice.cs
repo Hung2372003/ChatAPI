@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 namespace FakeFacebook.Service
 {
-    public class GitHubUploaderSevice
+    public class GitHubUploaderService
     {
         private readonly HttpClient _httpClient;
         private readonly string? _ownerGit;
@@ -12,7 +12,7 @@ namespace FakeFacebook.Service
         private readonly string? _branchGit;
         private readonly string? _tokenGit;
         private readonly string? _getImageDataLink;
-        public GitHubUploaderSevice(HttpClient httpClient, IConfiguration configuration)
+        public GitHubUploaderService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("FakeFacebookApp"); // bắt buộc với GitHub API

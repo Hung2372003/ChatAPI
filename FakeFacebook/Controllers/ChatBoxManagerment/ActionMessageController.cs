@@ -1,4 +1,4 @@
-﻿using FakeFacebook.Commom;
+﻿using FakeFacebook.Common;
 using FakeFacebook.Data;
 using FakeFacebook.ModelViewControllers;
 using Microsoft.AspNetCore.Authorization;

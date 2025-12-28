@@ -1,5 +1,4 @@
-﻿using FakeFacebook.Commom;
-using FakeFacebook.Data;
+﻿using FakeFacebook.Data;
 using FakeFacebook.Models;
 using FakeFacebook.ModelViewControllers;
 using Microsoft.AspNetCore.Authorization;
@@ -8,6 +7,7 @@ using System.Security.Claims;
 using System.Text.RegularExpressions;
 using System.Text;
 using FakeFacebook.Service;
+using FakeFacebook.Common;
 
 namespace FakeFacebook.Controllers.AppUser
 {
@@ -19,11 +19,11 @@ namespace FakeFacebook.Controllers.AppUser
     {
         private readonly FakeFacebookDbContext _context;
         private readonly IConfiguration _configuration;
-        private readonly GitHubUploaderSevice _githubUploader;
+        private readonly GitHubUploaderService _githubUploader;
         private readonly string? _getImageDataLink;
         private readonly string? _foderSaveAvatarFile;
 
-        public PersonalActionController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderSevice githubUploader)
+        public PersonalActionController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderService githubUploader)
         {
             _context = context;
             _configuration = configuration;
@@ -157,6 +157,13 @@ namespace FakeFacebook.Controllers.AppUser
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             try
             {
+                // --- BỔ SUNG: Làm sạch dữ liệu đầu vào để chống XSS ---
+                // Nếu muốn tắt xử lý này, chỉ cần comment lại 4 dòng dưới đây
+                infor.Name = SecurityHelper.SanitizeInput(infor.Name); // chống XSS
+                infor.Email = SecurityHelper.SanitizeInput(infor.Email); // chống XSS
+                infor.Address = SecurityHelper.SanitizeInput(infor.Address); // chống XSS
+                infor.PhoneNumber = SecurityHelper.SanitizeInput(infor.PhoneNumber); // chống XSS
+
                 var check = _context.UserInformations.FirstOrDefault(x => x.Id == StaticUser && x.IsDeleted == false);
                 if (check != null)
                 {
@@ -166,7 +173,6 @@ namespace FakeFacebook.Controllers.AppUser
                         msg.Object = await _githubUploader.UploadFileAsync(path, infor.Avatar!, $"Upload {infor.Avatar?.FileName}");
                         check.Avatar = path;
                         _context.SaveChanges();
-
                     }
                     check.Email = (infor.Email != "" && infor.Email != null) ? infor.Email : check.Email;
                     check.Name = (infor.Name != "" && infor.Name != null) ? infor.Name : check.Name;
@@ -177,7 +183,6 @@ namespace FakeFacebook.Controllers.AppUser
                     _context.SaveChanges();
                     msg.Object = new
                     {
-
                         Id = check.Id,
                         Name = check.Name,
                         Address = check.Address,
@@ -198,6 +203,7 @@ namespace FakeFacebook.Controllers.AppUser
                 msg.Error = true;
                 msg.Title = "Có lỗi sảy ra: " + e; 
             }
+            return new JsonResult(msg);
             return new JsonResult(msg);
         }
 
@@ -306,6 +312,9 @@ namespace FakeFacebook.Controllers.AppUser
         [HttpPost("SeachPeople")]
         public JsonResult SeachPeople([FromBody] string text) 
         {
+            // --- BỔ SUNG: Làm sạch dữ liệu đầu vào để chống XSS ---
+            // Nếu muốn tắt xử lý này, chỉ cần comment lại dòng dưới đây
+            text = SecurityHelper.SanitizeInput(text); // chống XSS
             var msg = new Message() { Title = "", Error = false, Object = "" };
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             var friends = from a in _context.FriendDoubles.Where(x => (x.UserCode1 == StaticUser
