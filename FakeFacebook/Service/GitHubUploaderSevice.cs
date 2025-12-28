@@ -25,7 +25,10 @@ namespace FakeFacebook.Service
 
         public async Task<string> UploadFileAsync(string path, IFormFile file, string message)
         {
-            var checkUrl = $"https://api.github.com/repos/{_ownerGit}/{_repoGit}/contents/{path}";
+            var encodedPath = string.Join("/",
+                     path.Split('/').Select(Uri.EscapeDataString)
+                 );
+            var checkUrl = $"https://api.github.com/repos/{_ownerGit}/{_repoGit}/contents/{encodedPath}";
             var checkRequest = new HttpRequestMessage(HttpMethod.Get, checkUrl);
             checkRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _tokenGit);
             checkRequest.Headers.UserAgent.ParseAdd("FakeFacebookApp");

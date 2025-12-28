@@ -1,5 +1,6 @@
 ﻿using FakeFacebook.Commom;
 using FakeFacebook.Models;
+using FakeFacebook.ModelViews.ChatOptimized;
 using Microsoft.EntityFrameworkCore;
 
 namespace FakeFacebook.Data
@@ -21,6 +22,11 @@ namespace FakeFacebook.Data
         public DbSet<FeelingPost> FeelingPosts { get; set; }
         public DbSet<UserToken> UserTokens { get; set; }
 
+
+        public DbSet<GroupChatDto> GroupChatDtos { get; set; }
+        public DbSet<ChatMessageDto> ChatMessageDtos { get; set; }
+
+
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
             if (Database.IsMySql())
@@ -41,7 +47,12 @@ namespace FakeFacebook.Data
         {
             base.OnModelCreating(modelBuilder);
             // ChatContent entity
-         
+
+
+            modelBuilder.Entity<GroupChatDto>().HasNoKey();
+            modelBuilder.Entity<ChatMessageDto>().HasNoKey();
+            modelBuilder.Entity<GroupChatIdDto>().HasNoKey();
+
 
             foreach (var entity in modelBuilder.Model.GetEntityTypes())
             {

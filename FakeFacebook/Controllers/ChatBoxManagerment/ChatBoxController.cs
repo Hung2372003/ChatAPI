@@ -4,9 +4,14 @@ using FakeFacebook.Hubs;
 using FakeFacebook.Models;
 using FakeFacebook.ModelViewControllers.ChatBox;
 using FakeFacebook.ModelViewControllers.ChatBoxManagerment;
+using FakeFacebook.ModelViews.ChatOptimized;
 using FakeFacebook.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using System.Data;
 using System.Security.Claims;
 
 
@@ -23,7 +28,8 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
         private readonly string? _foderSaveAvatarImage;
         private readonly string? _foderSaveChatFile;
         private readonly string? _foderSaveGroupAvatarImage;
-        public ChatBoxController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderSevice githubUploader, ICloudinaryService cloudinaryService)
+        private readonly IMemoryCache _cache;
+        public ChatBoxController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderSevice githubUploader, ICloudinaryService cloudinaryService, IMemoryCache cache)
         {
             _context = context;
             _getImageDataLink = configuration["Git:GetImageDataLink"];
@@ -32,6 +38,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             _foderSaveChatFile = "ChatBox";
             _foderSaveGroupAvatarImage = "Images/GroupAvatar";
             _cloudinaryService = cloudinaryService;
+            _cache = cache;
         }
 
         // Get------------------------------------------------------
@@ -44,7 +51,8 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
 
         [HttpGet("GetAllGroupChatId")]
         [Authorize]
-        public IActionResult GetAllGroupChatId() {
+        public IActionResult GetAllGroupChatId()
+        {
             var msg = new Message { Id = 0, Error = false, Title = "", Object = new List<object>() };
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             try
@@ -58,9 +66,10 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                                 };
                 msg.Object = ListGroup.ToList();
             }
-            catch (Exception ex) { 
+            catch (Exception ex)
+            {
                 msg.Error = true;
-                msg.Title = ex.Message;  
+                msg.Title = ex.Message;
             }
             return new JsonResult(msg);
         }
@@ -72,8 +81,8 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             try
             {
-                var ListGroup = from a in _context.ChatGroups.Where(x => x.GroupDouble == false && x.IsDeleted==false)
-                                join b in _context.GroupMembers.Where(x => x.MemberCode == StaticUser && x.IsDeleted==false)
+                var ListGroup = from a in _context.ChatGroups.Where(x => x.GroupDouble == false && x.IsDeleted == false)
+                                join b in _context.GroupMembers.Where(x => x.MemberCode == StaticUser && x.IsDeleted == false)
                                 on a.Id equals b.GroupChatId
                                 select new
                                 {
@@ -125,198 +134,173 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
         // tạo tin nhắn nếu có
         public JsonResult GenernalMessageData([FromBody] CreateWindowChat data)
         {
-            var msg = new Message() {Id=null, Title = "", Error = false, Object = "" ,PreventiveObject=""};
+            var msg = new Message() { Id = null, Title = "", Error = false, Object = "", PreventiveObject = "" };
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             try
             {
+                int limit = (data.Limit.HasValue && data.Limit.Value > 0) ? data.Limit.Value : 20;
+                int offset = (data.Offset.HasValue && data.Offset.Value >= 0) ? data.Offset.Value : 0;
 
                 if (data?.UserCode != null)
                 {
-                    var CheckGroupChatIdNew = from a in _context.ChatGroups.Where(x => x.GroupDouble == true && x.IsDeleted==false) 
-                                           join b in _context.GroupMembers.Where(x => x.MemberCode == data.UserCode && x.IsDeleted==false)
-                                           on a.Id equals b.GroupChatId
-                                           select new
-                                           {
-                                               a.Id,
-                                           };
+                    var CheckGroupChatIdNew = from a in _context.ChatGroups.Where(x => x.GroupDouble == true && x.IsDeleted == false)
+                                              join b in _context.GroupMembers.Where(x => x.MemberCode == data.UserCode && x.IsDeleted == false)
+                                              on a.Id equals b.GroupChatId
+                                              select new { a.Id };
 
                     var GroupChatId = (from a in CheckGroupChatIdNew
-                                      join b in _context.GroupMembers.Where(x => x.MemberCode == StaticUser && x.IsDeleted == false)
-                                      on a.Id equals b.GroupChatId
-                                      select new
-                                      {
-                                          a.Id,
-                                      })?.FirstOrDefault()?.Id;
-                    if (GroupChatId==null)
+                                       join b in _context.GroupMembers.Where(x => x.MemberCode == StaticUser && x.IsDeleted == false)
+                                       on a.Id equals b.GroupChatId
+                                       select new { a.Id })?.FirstOrDefault()?.Id;
+
+                    if (GroupChatId == null)
                     {
-                        var addGroup = new ChatGroups();
-                        addGroup.GroupDouble = true;
-                        addGroup.CreatedBy = StaticUser;
-                        addGroup.CreatedTime = DateTime.UtcNow;
-                        addGroup.Quantity = 2;
-                        addGroup.IsDeleted = false;
+                        var addGroup = new ChatGroups
+                        {
+                            GroupDouble = true,
+                            CreatedBy = StaticUser,
+                            CreatedTime = DateTime.UtcNow,
+                            Quantity = 2,
+                            IsDeleted = false
+                        };
                         _context.Add(addGroup);
                         _context.SaveChanges();
 
-                        var addMember1 = new GroupMember();
-                        addMember1.GroupChatId = addGroup.Id;
-                        addMember1.MemberCode = StaticUser;
-                        addMember1.IsDeleted = false;
-                        addMember1.InvitedTime = DateTime.UtcNow;
-                        addMember1.InvitedBy = StaticUser;
+                        var addMember1 = new GroupMember
+                        {
+                            GroupChatId = addGroup.Id,
+                            MemberCode = StaticUser,
+                            IsDeleted = false,
+                            InvitedTime = DateTime.UtcNow,
+                            InvitedBy = StaticUser
+                        };
                         _context.Add(addMember1);
-                     
 
-                        var addMember2 = new GroupMember();
-                        addMember2.GroupChatId = addGroup.Id;
-                        addMember2.MemberCode = data.UserCode;
-                        addMember2.InvitedBy = StaticUser;
-                        addMember2.InvitedTime = DateTime.UtcNow;
-                        addMember2.IsDeleted = false;
+                        var addMember2 = new GroupMember
+                        {
+                            GroupChatId = addGroup.Id,
+                            MemberCode = data.UserCode,
+                            InvitedBy = StaticUser,
+                            InvitedTime = DateTime.UtcNow,
+                            IsDeleted = false
+                        };
                         _context.Add(addMember2);
                         _context.SaveChanges();
 
-                        msg.PreventiveObject = new { 
-                            GroupChatId=addGroup.Id,
-                            //GroupDouble=addGroup.GroupDouble
-                        };
+                        msg.PreventiveObject = new { GroupChatId = addGroup.Id };
                         msg.Title = "NotMess";
                         return new JsonResult(msg);
-
                     }
                     else
                     {
-                        var SetStatus = _context.GroupMembers.Where(x => x.GroupChatId == GroupChatId &&x.IsDeleted==false).ToList();
-
+                        var SetStatus = _context.GroupMembers.Where(x => x.GroupChatId == GroupChatId && x.IsDeleted == false).ToList();
                         foreach (var item in SetStatus)
-                        {
                             item.Status = item.MemberCode == StaticUser ? true : item.Status;
-                        }
+
                         _context.SaveChanges();
+
                         var checkContent = _context.ChatContents.FirstOrDefault(x => x.GroupChatId == GroupChatId)?.Id;
                         if (checkContent == null)
                         {
-                            msg.PreventiveObject = new {
-                                GroupChatId = GroupChatId,
-                                //GroupDouble = true
-                            };
+                            msg.PreventiveObject = new { GroupChatId = GroupChatId };
                             msg.Title = "NotMess";
                             return new JsonResult(msg);
                         }
-                        var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == GroupChatId && (data.MessId == null || x.Id < data.MessId)).OrderByDescending(x => x.Id).Take(20)
-                                   join b in _context.FileChats on a.FileCode equals b.FileCode into b1
-                                   from b in b1.DefaultIfEmpty()
-                                   group new {a,b}
-                                   by new {
-                                    a.Id,
-                                    a.CreatedBy,
-                                    a.Content,
-                                    a.CreatedTime,
-                                    a.GroupChatId,
-                                    a.FileCode,
-                                   } into e
-                                   select new
-                                   {
-                                       e.Key.Id,                                     
-                                       e.Key.CreatedBy,
-                                       e.Key.Content,
-                                       e.Key.CreatedTime,
-                                       e.Key.FileCode,
-                                       ListFile=e.Where(x=>x.b!=null).Select(x => new
-                                       {
-                                           x.b.Id,
-                                           x.b.Name,
-                                           Path = $"{_getImageDataLink}/{x.b.Path}",
-                                           x.b.Type,
-                                       }).ToList(),
 
-                                   };
+                        var mess = (from a in _context.ChatContents
+                                    .Where(x => x.GroupChatId == GroupChatId && (data.MessId == null || x.Id < data.MessId))
+                                    .OrderByDescending(x => x.Id)
+                                    .Skip(offset)
+                                    .Take(limit)
+                                    join b in _context.FileChats on a.FileCode equals b.FileCode into b1
+                                    from b in b1.DefaultIfEmpty()
+                                    group new { a, b } by new
+                                    {
+                                        a.Id,
+                                        a.CreatedBy,
+                                        a.Content,
+                                        a.CreatedTime,
+                                        a.GroupChatId,
+                                        a.FileCode
+                                    } into e
+                                    select new
+                                    {
+                                        e.Key.Id,
+                                        e.Key.CreatedBy,
+                                        e.Key.Content,
+                                        e.Key.CreatedTime,
+                                        e.Key.FileCode,
+                                        ListFile = e.Where(x => x.b != null).Select(x => new
+                                        {
+                                            x.b.Id,
+                                            x.b.Name,
+                                            Path = $"{_getImageDataLink}/{x.b.Path}",
+                                            x.b.Type,
+                                        }).ToList(),
+                                    }).ToList();
 
                         msg.Title = "MessOk";
-                        msg.Object = mess.ToList();    
-                        
-                        //msg.Id = GroupChatId;
-                        msg.PreventiveObject = new
-                        {
-                            GroupChatId = GroupChatId,
-                            //GroupDouble = _context.ChatGroups.FirstOrDefault(x => x.Id == GroupChatId)?.GroupDouble
-                        };
+                        msg.Object = mess;
+                        msg.PreventiveObject = new { GroupChatId = GroupChatId };
                         return new JsonResult(msg);
                     }
                 }
                 else if (data?.GroupChatId != null)
                 {
-
-                    var checkContent = _context.ChatContents.FirstOrDefault(x => x.GroupChatId == data.GroupChatId)?.Id;
-                    if (checkContent == null)
-                    {
-                        msg.PreventiveObject = new { 
-                            GroupChatId=data.GroupChatId,
-                            //GroupDouble=_context.ChatGroups.FirstOrDefault(x=>x.Id==data.GroupChatId)?.GroupDouble
-                        };
-                        msg.Title = "NotMess";
-                        return new JsonResult(msg);
-                    }
-
                     var SetStatus = _context.GroupMembers.Where(x => x.GroupChatId == data.GroupChatId && x.IsDeleted == false).ToList();
                     foreach (var item in SetStatus)
-                    {
                         item.Status = item.MemberCode == StaticUser ? true : item.Status;
-                    }
+
                     _context.SaveChanges();
 
-                    var mess = from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId && (data.MessId == null || x.Id < data.MessId)).OrderByDescending(x => x.Id).Take(20)
-                               join b in _context.FileChats on a.FileCode equals b.FileCode into b1
-                               from b in b1.DefaultIfEmpty()
-                               group new { a, b }
-                               by new
-                               {
-                                   a.Id,
-                                   a.CreatedBy,
-                                   a.Content,
-                                   a.CreatedTime,
-                                   a.GroupChatId,
-                                   a.FileCode
-                               } into e
-                               select new
-                               {
-                                   e.Key.Id,
-                                   e.Key.CreatedBy,
-                                   e.Key.Content,
-                                   e.Key.CreatedTime,
-                                   e.Key.FileCode,
-                                   ListFile = e.Where(x => x.b != null).Select(x => new
-                                   {
-                                       x.b.Id,
-                                       x.b.Name,
-                                       Path= $"{_getImageDataLink}/{x.b.Path}",
-                                       x.b.Type,
-                                       GroupDouble = true,
-                                   }).ToList(),
+                    var mess = (from a in _context.ChatContents
+                                .Where(x => x.GroupChatId == data.GroupChatId && (data.MessId == null || x.Id < data.MessId))
+                                .OrderByDescending(x => x.Id)
+                                .Skip(offset)
+                                .Take(limit)
+                                join b in _context.FileChats on a.FileCode equals b.FileCode into b1
+                                from b in b1.DefaultIfEmpty()
+                                group new { a, b } by new
+                                {
+                                    a.Id,
+                                    a.CreatedBy,
+                                    a.Content,
+                                    a.CreatedTime,
+                                    a.GroupChatId,
+                                    a.FileCode
+                                } into e
+                                select new
+                                {
+                                    e.Key.Id,
+                                    e.Key.CreatedBy,
+                                    e.Key.Content,
+                                    e.Key.CreatedTime,
+                                    e.Key.FileCode,
+                                    ListFile = e.Where(x => x.b != null).Select(x => new
+                                    {
+                                        x.b.Id,
+                                        x.b.Name,
+                                        Path = $"{_getImageDataLink}/{x.b.Path}",
+                                        x.b.Type,
+                                    }).ToList()
+                                }).ToList();
 
-                               };
                     msg.Title = "MessOk";
-                    msg.Object = mess.ToList();
-                    //msg.Id = data.GroupChatId;
-                    msg.PreventiveObject = new
-                    {
-                        GroupChatId=data.GroupChatId,
-                    };
+                    msg.Object = mess;
+                    msg.PreventiveObject = new { GroupChatId = data.GroupChatId };
                     return new JsonResult(msg);
-
                 }
-
-
             }
             catch (Exception e)
             {
                 msg.Title = $"Có lỗi xảy ra: {e.Message}";
                 msg.Error = true;
-                
             }
+
             return new JsonResult(msg);
         }
-     
+
+
         [HttpPost("AddNewMessage")]
         [Authorize]
         public async Task<IActionResult> AddNewMessage([FromForm] ChatBoxModelViews ojb, [FromForm] List<IFormFile> FileUpload)
@@ -324,7 +308,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             var msg = new Message { Id = 0, Error = false, Title = "", Object = new List<object>() };
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             try
-            {           
+            {
                 var data = _context.GroupMembers.Where(x => x.GroupChatId == ojb.GroupChatId).ToList();
                 for (int i = 0; i < data.Count; i++)
                 {
@@ -363,8 +347,8 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                         SaveFile.Size = file.Length;
                         SaveFile.IsDeleted = false;
                         SaveFile.ServerCode = Directory.GetCurrentDirectory();
-                        _context.FileChats.Add(SaveFile);                        
-       
+                        _context.FileChats.Add(SaveFile);
+
                         if (msg.Object is List<object> newList)
                         {
                             newList.Add(new
@@ -400,8 +384,8 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                 ojb.ListUser?.Add(StaticUser);
 
                 var creatGroupChat = new ChatGroups();
-                creatGroupChat.GroupAvartar = (ojb.Avatar != null)?($"{_foderSaveGroupAvatarImage}/{ojb.Avatar.FileName}"):null;
-                creatGroupChat.GroupDouble=false;
+                creatGroupChat.GroupAvartar = (ojb.Avatar != null) ? ($"{_foderSaveGroupAvatarImage}/{ojb.Avatar.FileName}") : null;
+                creatGroupChat.GroupDouble = false;
                 creatGroupChat.GroupName = ojb.GroupName;
                 creatGroupChat.CreatedBy = StaticUser;
                 creatGroupChat.CreatedTime = DateTime.UtcNow;
@@ -410,38 +394,39 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                 _context.ChatGroups.Add(creatGroupChat);
                 _context.SaveChanges();
 
-                string avatarPath="";
-                if (ojb.Avatar != null) {
+                string avatarPath = "";
+                if (ojb.Avatar != null)
+                {
                     avatarPath = await _githubUploader.UploadFileAsync($"{ojb.Avatar.FileName}/{ojb.Avatar.FileName}", ojb.Avatar, $"Upload {ojb.Avatar.FileName}");
                 }
                 for (int i = 0; i < ojb.ListUser?.Count; i++)
                 {
                     var addMember = new GroupMember();
-                    addMember.GroupChatId=creatGroupChat.Id;
+                    addMember.GroupChatId = creatGroupChat.Id;
                     addMember.MemberCode = ojb.ListUser[i];
                     addMember.IsDeleted = false;
-                    addMember.Status = ojb.ListUser[i]==StaticUser ? addMember.Status=true : addMember.Status=false;
+                    addMember.Status = ojb.ListUser[i] == StaticUser ? addMember.Status = true : addMember.Status = false;
                     addMember.InvitedTime = DateTime.UtcNow;
                     addMember.InvitedBy = StaticUser;
                     _context.Add(addMember);
-                    _context.SaveChanges();     
+                    _context.SaveChanges();
                 }
                 msg.Title = "Tạo nhóm thành công";
                 if (msg.Object is List<object> newList)
                 {
                     newList.Add(new
                     {
-                        GroupChatId= creatGroupChat.Id,
-                        GroupAvatar= (creatGroupChat.GroupAvartar!=null)?$"{_getImageDataLink}/{creatGroupChat.GroupAvartar}":null,
+                        GroupChatId = creatGroupChat.Id,
+                        GroupAvatar = (creatGroupChat.GroupAvartar != null) ? $"{_getImageDataLink}/{creatGroupChat.GroupAvartar}" : null,
                         GroupName = ojb.GroupName,
-                        GroupDouble=false,
+                        GroupDouble = false,
                     });
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 msg.Title = "Có lỗi sảy ra: " + e.Message;
-                msg.Error=true;
+                msg.Error = true;
             }
             return new JsonResult(msg);
         }
@@ -461,16 +446,16 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                            select new
                            {
                                b.Id,
-                               Path= $"{_getImageDataLink}/{b.Path}",
+                               Path = $"{_getImageDataLink}/{b.Path}",
                                b.Type,
                                b.CreatedTime,
                                a.CreatedBy,
-                               ContentId=a.Id
+                               ContentId = a.Id
                            };
 
                 msg.Object = data.ToList();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 msg.Error = true;
                 msg.Title = e.Message;
@@ -500,12 +485,108 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                           };
                 msg.Object = get.ToList();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 msg.Error = true;
                 msg.Title = e.Message;
-            }   
+            }
             return new JsonResult(msg);
         }
+
+
+
+
+
+
+        // API đã tối ưu
+
+
+        [HttpPost("CreateWindowChat1")]
+        [Authorize]
+        public async Task<JsonResult> GenernalMessageData1([FromBody] CreateWindowChat data)
+        {
+            var msg = new Message { Error = false };
+            var userId = int.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            try
+            {
+                int groupChatId;
+
+                // 👉 Chat đôi
+                if (data.UserCode != null)
+                {
+                    var output = new SqlParameter("@GROUP_CHAT_ID", SqlDbType.Int) { Direction = ParameterDirection.Output };
+                    await _context.Database.ExecuteSqlRawAsync(
+                        "EXEC SP_GET_OR_CREATE_DOUBLE_CHAT @USER_A, @USER_B, @GROUP_CHAT_ID OUTPUT",
+                        new SqlParameter("@USER_A", userId),
+                        new SqlParameter("@USER_B", data.UserCode),
+                        output
+                    );
+                    groupChatId = (int)output.Value;
+                }
+                else
+                {
+                    groupChatId = data.GroupChatId!.Value;
+                }
+
+                var offset = data.Offset ?? 0;
+                var limit = data.Limit ?? 50;
+                var cacheKey = $"CHAT_{groupChatId}_{data.MessId ?? 0}_{offset}_{limit}";
+
+                if (!_cache.TryGetValue(cacheKey, out List<object> messagesWithFiles))
+                {
+                    // Query DB với OFFSET/LIMIT trực tiếp trong SQL
+                    var sql = @"
+                SELECT * 
+                FROM FN_GET_CHAT_MESSAGE(@GROUP_CHAT_ID, @LAST_ID, @OFFSET, @LIMIT)
+                ORDER BY ID DESC";
+
+                    var messages = await _context.ChatMessageDtos
+                        .FromSqlRaw(sql,
+                            new SqlParameter("@GROUP_CHAT_ID", groupChatId),
+                            new SqlParameter("@LAST_ID", data.MessId ?? (object)DBNull.Value),
+                            new SqlParameter("@OFFSET", offset),
+                            new SqlParameter("@LIMIT", limit)
+                        )
+                        .AsNoTracking()
+                        .ToListAsync();
+
+                    messagesWithFiles = messages.Select(m => new
+                    {
+                        m.Id,
+                        m.CreatedBy,
+                        m.Content,
+                        m.CreatedTime,
+                        ListFile = m.FileId != null ? new[]
+                        {
+                    new {
+                        m.FileId,
+                        m.FileName,
+                        Path = $"{_getImageDataLink}/{m.FilePath}",
+                        m.FileType
+                    }
+                } : Array.Empty<object>()
+                    }).Cast<object>().ToList();
+
+                    _cache.Set(cacheKey, messagesWithFiles, TimeSpan.FromSeconds(30));
+                }
+
+                msg.Title = messagesWithFiles.Any() ? "MessOk" : "NotMess";
+                msg.Object = messagesWithFiles;
+                msg.PreventiveObject = new { GroupChatId = groupChatId };
+            }
+            catch (Exception ex)
+            {
+                msg.Error = true;
+                msg.Title = ex.Message;
+            }
+
+            return new JsonResult(msg);
+        }
+
+
+
+
+
     }
 }

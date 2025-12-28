@@ -36,6 +36,9 @@ if (builder.Environment.IsDevelopment())
         options.ListenAnyIP(Int32.Parse(port));
     });
 }
+//cache
+builder.Services.AddMemoryCache();
+
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowSpecificOrigin",
         policy =>
