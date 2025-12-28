@@ -40,8 +40,9 @@ namespace FakeFacebook.Controllers.AccountSecurity
             _googleAuthService = googleAuthService;
             _foderSaveAvatarImage = "Images/Avatar";
             _httpClientFactory = httpClientFactory;
-
         }
+
+
 
         [HttpPost("UserLogin")]
         public JsonResult UserLogin([FromBody] LoginModelViews loginModel) 
@@ -88,6 +89,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
             */
             // --- CODE MỚI (bảo mật, ưu tiên hash + salt) ---
             var msg = new Message() { Id = null, Title = "", Error = false, Object = "" };
+            msg.RSAPublickeySever = SecurityHelper.GetPublicKeyFromPrivateKeyXml(_config["RSA:RSAPrivateKeyServer"]);
             try
             {
                 loginModel.Username = loginModel.Username;
@@ -167,6 +169,7 @@ namespace FakeFacebook.Controllers.AccountSecurity
         public JsonResult RegisterAcc([FromBody] RegisterAccModelViews RegAcc)
         { 
             var msg = new Message() { Id = null, Title = "", Error = false, Object = "" };
+            msg.RSAPublickeySever = SecurityHelper.GetPublicKeyFromPrivateKeyXml(_config["RSA:RSAPrivateKeyServer"]);
             // --- CODE CŨ (chưa bảo mật, chỉ dùng plain text) ---
             /*
             try

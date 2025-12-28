@@ -367,26 +367,75 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
         [Authorize]
         public async Task<IActionResult> AddNewMessage([FromForm] ChatBoxModelViews ojb, [FromForm] List<IFormFile> FileUpload)
         {
-            // --- BỔ SUNG: Làm sạch dữ liệu đầu vào để chống XSS ---
-            // Nếu muốn tắt xử lý này, chỉ cần comment lại các dòng dưới đây
-            if (ojb != null)
-            {
-                 ojb.Content = SecurityHelper.SanitizeInput(ojb.Content);
-                    if (!string.IsNullOrEmpty(_aesKey))
-                        ojb.Content = SecurityHelper.EncryptAes(ojb.Content, _aesKey);
-                // Nếu có thêm trường string khác cần chống XSS, thêm vào đây
-            }
+            // Quy trình: Giải mã AESKeyEncrypted bằng RSA private key, giải mã Content bằng AES key đó, mã hóa lại bằng AESKey nội bộ
             var msg = new Message { Id = 0, Error = false, Title = "", Object = new List<object>() };
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             try
             {
-
                 if (ojb == null)
                 {
                     msg.Error = true;
                     msg.Title = "ojb is null";
                     return new JsonResult(msg);
                 }
+
+                // 1. Lấy private key server từ config
+                var privateKeyXml = HttpContext.RequestServices.GetService(typeof(IConfiguration)) is IConfiguration config ? config["RSA:RSAPrivateKeyServer"] : null;
+                if (string.IsNullOrEmpty(privateKeyXml))
+                {
+                    msg.Error = true;
+                    msg.Title = "Server RSA private key not configured!";
+                    return new JsonResult(msg);
+                }
+
+                // 2. Giải mã AESKeyEncrypted bằng RSA
+                string aesKeyFromClient = null;
+                if (!string.IsNullOrEmpty(ojb.AESKeyEncrypted))
+                {
+                    using (var rsa = new System.Security.Cryptography.RSACryptoServiceProvider())
+                    {
+                        rsa.FromXmlString(privateKeyXml);
+                        var encryptedBytes = Convert.FromBase64String(ojb.AESKeyEncrypted);
+                        var decryptedBytes = rsa.Decrypt(encryptedBytes, false);
+                        aesKeyFromClient = System.Text.Encoding.UTF8.GetString(decryptedBytes);
+                    }
+                }
+                else
+                {
+                    msg.Error = true;
+                    msg.Title = "AESKeyEncrypted is missing!";
+                    return new JsonResult(msg);
+                }
+
+                // 3. Giải mã nội dung tin nhắn bằng AES key vừa giải mã được
+                string plainContent = null;
+                if (!string.IsNullOrEmpty(ojb.Content) && !string.IsNullOrEmpty(aesKeyFromClient))
+                {
+                    plainContent = SecurityHelper.DecryptAes(ojb.Content, aesKeyFromClient);
+                }
+                else
+                {
+                    msg.Error = true;
+                    msg.Title = "Content or AES key is missing!";
+                    return new JsonResult(msg);
+                }
+
+                // 4. Làm sạch nội dung để chống XSS
+                plainContent = SecurityHelper.SanitizeInput(plainContent);
+
+                // 5. Mã hóa lại nội dung bằng AESKey nội bộ trước khi lưu DB
+                string encryptedForDb = null;
+                if (!string.IsNullOrEmpty(_aesKey))
+                {
+                    encryptedForDb = SecurityHelper.EncryptAes(plainContent, _aesKey);
+                }
+                else
+                {
+                    msg.Error = true;
+                    msg.Title = "Server AESKey not configured!";
+                    return new JsonResult(msg);
+                }
+
                 var data = _context.GroupMembers.Where(x => x.GroupChatId == ojb.GroupChatId).ToList();
                 for (int i = 0; i < data.Count; i++)
                 {
@@ -403,7 +452,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
 
                 var chatContent = new ChatContent();
                 chatContent.CreatedBy = StaticUser;
-                chatContent.Content = ojb.Content ?? string.Empty;
+                chatContent.Content = encryptedForDb ?? string.Empty;
                 chatContent.GroupChatId = ojb.GroupChatId;
                 chatContent.CreatedTime = DateTime.UtcNow;
                 chatContent.IsDeleted = false;

@@ -1,3 +1,4 @@
+
 using System.Security.Cryptography;
 using System.Text;
 
@@ -116,6 +117,27 @@ namespace FakeFacebook.Common
                 if (!inside) { array[arrayIndex] = @let; arrayIndex++; }
             }
             return new string(array, 0, arrayIndex);
+        }
+                // Lấy public key từ private key (XML)
+        public static string GetPublicKeyFromPrivateKeyXml(string privateKeyXml)
+        {
+            if (string.IsNullOrEmpty(privateKeyXml)) return null;
+            using (var rsa = new RSACryptoServiceProvider())
+            {
+                rsa.FromXmlString(privateKeyXml);
+                return rsa.ToXmlString(false); // false = chỉ public key
+            }
+        }
+
+        // Sinh cặp key mẫu (private và public key dạng XML)
+        public static (string privateKeyXml, string publicKeyXml) GenerateRsaKeyPairXml(int keySize = 2048)
+        {
+            using (var rsa = new RSACryptoServiceProvider(keySize))
+            {
+                string privateKey = rsa.ToXmlString(true); // true = cả private + public
+                string publicKey = rsa.ToXmlString(false); // false = chỉ public
+                return (privateKey, publicKey);
+            }
         }
     }
 }
