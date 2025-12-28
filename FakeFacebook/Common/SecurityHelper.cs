@@ -73,6 +73,30 @@ namespace FakeFacebook.Common
                 }
             }
         }
+        // Tạo khóa AES ngẫu nhiên (32 bytes cho AES-256)
+        public static string GenerateRandomAesKey()
+        {
+            using (var aes = Aes.Create())
+            {
+                aes.KeySize = 256;
+                aes.GenerateKey();
+                return Convert.ToBase64String(aes.Key);
+            }
+        }
+        // Mã hóa khóa AES bằng RSA Public Key của người dùng
+        public static string EncryptWithRsa(string plainText, string publicKey)
+        {
+            if (string.IsNullOrEmpty(plainText) || string.IsNullOrEmpty(publicKey)) return null;
+            
+            using (var rsa = new RSACryptoServiceProvider(2048))
+            {
+                // Giả định Public Key lưu dưới dạng XML trong DB
+                rsa.FromXmlString(publicKey);
+                var data = Encoding.UTF8.GetBytes(plainText);
+                var encrypted = rsa.Encrypt(data, false);
+                return Convert.ToBase64String(encrypted);
+            }
+        }
 
         // Hàm mã hóa tin nhắn (có thể bổ sung sau)
         // public static string EncryptMessage(string message, string key) { ... }

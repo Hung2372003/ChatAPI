@@ -16,7 +16,7 @@
         public int? Limit { get; set; }
         public int? Offset { get; set; }
      
-        public string? RsaKeyPulic { get; set; }
+        public string? RSAPublicKey { get; set; }
         //public int PageSize { get; set; }
 
     }
