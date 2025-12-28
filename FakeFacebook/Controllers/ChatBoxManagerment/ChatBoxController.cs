@@ -158,8 +158,11 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
         [HttpPost("CreateWindowChat")]
         [Authorize]
         // tạo tin nhắn nếu có
+        
+
         public JsonResult GenernalMessageData([FromBody] CreateWindowChat data)
         {
+           
             var msg = new Message() { Id = null, Title = "", Error = false, Object = "", PreventiveObject = "" };
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             try
@@ -233,7 +236,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                             return new JsonResult(msg);
                         }
 
-                        var messRaw = (from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId && (data.MessId == null || x.Id < data.MessId)).OrderByDescending(x => x.Id).Take(20)
+                        var messRaw = (from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId && (data.MessId == null || x.Id < data.MessId)).OrderByDescending(x => x.Id).Take(limit).Skip(offset)
                             join b in _context.FileChats on a.FileCode equals b.FileCode into b1
                             from b in b1.DefaultIfEmpty()
                             group new { a, b }
@@ -263,6 +266,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                                 }).ToList(),
                             }).ToList();
 
+
                         var mess = messRaw.Select(m => new
                             {
                                 m.Id,
@@ -280,6 +284,8 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                         msg.PreventiveObject = new
                         {
                             GroupChatId = GroupChatId,
+                                                    
+
                             //GroupDouble = _context.ChatGroups.FirstOrDefault(x => x.Id == GroupChatId)?.GroupDouble
                         };
 
@@ -294,7 +300,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
 
                     _context.SaveChanges();
 
-                    var messRaw = (from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId && (data.MessId == null || x.Id < data.MessId)).OrderByDescending(x => x.Id).Take(20)
+                    var messRaw = (from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId && (data.MessId == null || x.Id < data.MessId)).OrderByDescending(x => x.Id).Take(limit).Skip(offset)
                         join b in _context.FileChats on a.FileCode equals b.FileCode into b1
                         from b in b1.DefaultIfEmpty()
                         group new { a, b }
