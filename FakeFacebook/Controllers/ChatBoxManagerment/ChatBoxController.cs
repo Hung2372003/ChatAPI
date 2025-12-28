@@ -158,8 +158,6 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
         [HttpPost("CreateWindowChat")]
         [Authorize]
         // tạo tin nhắn nếu có
-        
-
         public JsonResult GenernalMessageData([FromBody] CreateWindowChat data)
         {
            
@@ -169,6 +167,14 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             {
                 int limit = (data.Limit.HasValue && data.Limit.Value > 0) ? data.Limit.Value : 20;
                 int offset = (data.Offset.HasValue && data.Offset.Value >= 0) ? data.Offset.Value : 0;
+
+                // Sinh AES key cho session
+                string sessionAesKey = SecurityHelper.GenerateRandomAesKey();
+                string encryptedAesKey = null;
+                if (!string.IsNullOrEmpty(data.RSAPublicKey))
+                {
+                    encryptedAesKey = SecurityHelper.EncryptWithRsa(sessionAesKey, data.RSAPublicKey);
+                }
 
                 if (data?.UserCode != null)
                 {
@@ -271,24 +277,20 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                             {
                                 m.Id,
                                 m.CreatedBy,
-                                Content = TryDecrypt(m.Content, _aesKey),
+                                m.Content,
                                 m.CreatedTime,
                                 m.FileCode,
                                 m.ListFile
                             }).ToList();
 
                         msg.Title = "MessOk";
-                        msg.Object = mess;    
-                        
-                        //msg.Id = GroupChatId;
+                        msg.Object = mess;
+                        // Không giải mã tin nhắn ở server, chỉ gửi về client
                         msg.PreventiveObject = new
                         {
                             GroupChatId = GroupChatId,
-                                                    
-
-                            //GroupDouble = _context.ChatGroups.FirstOrDefault(x => x.Id == GroupChatId)?.GroupDouble
+                            EncryptedAesKey = encryptedAesKey,
                         };
-
                         return new JsonResult(msg);
                     }
                 }
@@ -331,21 +333,23 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                         }).ToList();
 
                     var mess = messRaw.Select(m => new
-                        {
-                            m.Id,
-                            m.CreatedBy,
-                            Content = TryDecrypt(m.Content, _aesKey),
-                            m.CreatedTime,
-                            m.FileCode,
-                            m.ListFile
-                        }).ToList();
+                            {
+                                m.Id,
+                                m.CreatedBy,
+                                // Mã hóa nội dung bằng sessionAesKey, không giải mã ở server
+                                Content = SecurityHelper.EncryptAes(m.Content, sessionAesKey),
+                                m.CreatedTime,
+                                m.FileCode,
+                                m.ListFile
+                            }).ToList();
 
                     msg.Title = "MessOk";
                     msg.Object = mess;
-                    //msg.Id = data.GroupChatId;
+                    // Không giải mã tin nhắn ở server, chỉ gửi về client
                     msg.PreventiveObject = new
                     {
-                        GroupChatId=data.GroupChatId,
+                        GroupChatId = data.GroupChatId,
+                        EncryptedAesKey = encryptedAesKey,
                     };
                     return new JsonResult(msg);
                 }
