@@ -106,7 +106,12 @@ namespace FakeFacebook.Common
         public static string SanitizeInput(string input)
         {
             if (string.IsNullOrEmpty(input)) return input;
-            // Loại bỏ các thẻ HTML/script đơn giản (cơ bản, có thể thay thế bằng thư viện mạnh hơn nếu cần)
+#if HAS_HTMLSANITIZER
+            // Nếu đã cài HtmlSanitizer (Ganss.XSS), dùng thư viện này
+            var sanitizer = new Ganss.XSS.HtmlSanitizer();
+            return sanitizer.Sanitize(input);
+#else
+            // Nếu chưa cài, fallback về hàm cũ (loại bỏ thẻ html/script đơn giản)
             var array = new char[input.Length];
             int arrayIndex = 0;
             bool inside = false;
@@ -117,6 +122,7 @@ namespace FakeFacebook.Common
                 if (!inside) { array[arrayIndex] = @let; arrayIndex++; }
             }
             return new string(array, 0, arrayIndex);
+#endif
         }
                 // Lấy public key từ private key (XML)
         public static string GetPublicKeyFromPrivateKeyXml(string privateKeyXml)
