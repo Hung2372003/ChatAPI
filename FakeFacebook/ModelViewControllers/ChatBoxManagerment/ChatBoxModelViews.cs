@@ -4,6 +4,7 @@
     {
         public int GroupChatId { get; set; }
         public string? Content { get; set; }
+        public string? AESKey { get; set; }
 
         //new - not
         //public int? PostId { get; set; }
@@ -15,9 +16,8 @@
         public int? MessId { get; set; }
         public int? Limit { get; set; }
         public int? Offset { get; set; }
-     
         public string? RSAPublicKey { get; set; }
-        //public int PageSize { get; set; }
+
 
     }
     public class FileChatModelViews

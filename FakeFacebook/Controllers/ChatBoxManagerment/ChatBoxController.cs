@@ -276,7 +276,8 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                             {
                                 m.Id,
                                 m.CreatedBy,
-                                m.Content,
+                                // Giải mã bằng _aesKey, sau đó mã hóa lại bằng sessionAesKey
+                                Content = SecurityHelper.EncryptAes(TryDecrypt(m.Content, _aesKey), sessionAesKey),
                                 m.CreatedTime,
                                 m.FileCode,
                                 m.ListFile
@@ -284,7 +285,6 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
 
                         msg.Title = "MessOk";
                         msg.Object = mess;
-                        // Không giải mã tin nhắn ở server, chỉ gửi về client
                         msg.PreventiveObject = new
                         {
                             GroupChatId = GroupChatId,
@@ -335,8 +335,8 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
                             {
                                 m.Id,
                                 m.CreatedBy,
-                                // Mã hóa nội dung bằng sessionAesKey, không giải mã ở server
-                                Content = SecurityHelper.EncryptAes(m.Content, sessionAesKey),
+                                // Giải mã bằng _aesKey, sau đó mã hóa lại bằng sessionAesKey
+                                Content = SecurityHelper.EncryptAes(TryDecrypt(m.Content, _aesKey), sessionAesKey),
                                 m.CreatedTime,
                                 m.FileCode,
                                 m.ListFile
@@ -344,7 +344,6 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
 
                     msg.Title = "MessOk";
                     msg.Object = mess;
-                    // Không giải mã tin nhắn ở server, chỉ gửi về client
                     msg.PreventiveObject = new
                     {
                         GroupChatId = data.GroupChatId,
