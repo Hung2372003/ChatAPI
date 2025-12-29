@@ -24,13 +24,15 @@ namespace FakeFacebook.Controllers
         private readonly ICloudinaryService _cloudinaryService;
         private static bool _isFirebaseInitialized = false;
         private readonly RsaKeyProvider _rsaKeyProvider;
+        private readonly RsaKeyProvider _rsa;
         public TestController(
             IConfiguration configuration,
             FakeFacebookDbContext context,
             GitHubUploaderService githubUploader,
             ICloudinaryService cloudinaryService,
             IFirebasePushService firebasePushService,
-            RsaKeyProvider rsaKeyProvider
+            RsaKeyProvider rsaKeyProvider,
+            RsaKeyProvider rsa
             )
 
         {
@@ -40,6 +42,7 @@ namespace FakeFacebook.Controllers
             _firebasePushService = firebasePushService;
             _cloudinaryService = cloudinaryService;
             _rsaKeyProvider = rsaKeyProvider;
+            _rsa = rsa;
         }
 
         public class SecureMessageRequest
@@ -60,7 +63,8 @@ namespace FakeFacebook.Controllers
         {
             return Ok(new
             {
-                publicKey = _rsaKeyProvider.PublicKeyXml
+                _rsa.PublicKeyPem
+
             });
         }
 
@@ -76,9 +80,9 @@ namespace FakeFacebook.Controllers
             try
             {
                 // 1️⃣ RSA decrypt AES key
-                var aesKeyBase64 = SecurityHelper.DecryptRsa(
+                var aesKeyBase64 = SecurityHelper.DecryptRsaPem(
                     request.EncryptedKey,
-                    _rsaKeyProvider.PrivateKeyXml
+                    _rsaKeyProvider.PrivateKeyPem
                 );
 
                 // 2️⃣ AES decrypt message

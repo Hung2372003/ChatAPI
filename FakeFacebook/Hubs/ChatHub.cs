@@ -27,7 +27,7 @@ public class ChatHub : Hub
         // ✅ GỬI PUBLIC KEY CHO CLIENT VỪA CONNECT
         await Clients.Caller.SendAsync(
             "ReceivePublicKey",
-            _rsa.PublicKeyXml
+            _rsa.PublicKeyPem
         );
 
         // Online users

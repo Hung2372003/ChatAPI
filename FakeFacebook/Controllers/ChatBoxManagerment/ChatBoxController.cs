@@ -27,6 +27,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
         private readonly string? _foderSaveAvatarImage;
         private readonly string? _foderSaveChatFile;
         private readonly string? _foderSaveGroupAvatarImage;
+        private readonly RsaKeyProvider _rsa;
 
         private readonly IMemoryCache _cache;
      
@@ -57,7 +58,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             }
         }
 
-        public ChatBoxController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderService githubUploader, ICloudinaryService cloudinaryService, IMemoryCache cache)
+        public ChatBoxController(RsaKeyProvider rsa, FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderService githubUploader, ICloudinaryService cloudinaryService, IMemoryCache cache)
 
         {
             _context = context;
@@ -71,6 +72,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             _cache = cache;
 
             _aesKey = configuration["AESKey"];
+            _rsa = rsa;
 
         }
 
@@ -180,7 +182,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
 
                 if (!string.IsNullOrEmpty(data.RSAPublicKey))
                 {
-                    encryptedAesKey = SecurityHelper.EncryptWithRsa(
+                    encryptedAesKey = SecurityHelper.EncryptWithRsaPem(
                         sessionAesKey,
                         data.RSAPublicKey
                     );
@@ -343,144 +345,198 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
             .ToList<dynamic>();
         }
 
-
         [HttpPost("AddNewMessage")]
         [Authorize]
-        public async Task<IActionResult> AddNewMessage([FromForm] ChatBoxModelViews ojb, [FromForm] List<IFormFile> FileUpload)
+        public async Task<IActionResult> AddNewMessage(
+            [FromForm] ChatBoxModelViews ojb,
+            [FromForm] List<IFormFile> FileUpload)
         {
-            // Quy trình: Giải mã AESKeyEncrypted bằng RSA private key, giải mã Content bằng AES key đó, mã hóa lại bằng AESKey nội bộ
-            var msg = new Message { Id = 0, Error = false, Title = "", Object = new List<object>() };
-            var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var msg = new Message
+            {
+                Id = 0,
+                Error = false,
+                Title = "",
+                Object = new List<object>()
+            };
+
+            var staticUser = Convert.ToInt32(
+                HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            );
+
             try
             {
                 if (ojb == null)
                 {
                     msg.Error = true;
-                    msg.Title = "ojb is null";
+                    msg.Title = "Request body is null";
                     return new JsonResult(msg);
                 }
 
-                // 1. Lấy private key server từ config
-                var privateKeyXml = HttpContext.RequestServices.GetService(typeof(IConfiguration)) is IConfiguration config ? config["RSA:RSAPrivateKeyServer"] : null;
-                if (string.IsNullOrEmpty(privateKeyXml))
+                // =====================================================
+                // 1. LẤY RSA PRIVATE KEY (PEM)
+                // =====================================================
+                var privateKeyPem = _rsa.PrivateKeyPem;
+                if (string.IsNullOrEmpty(privateKeyPem))
                 {
                     msg.Error = true;
-                    msg.Title = "Server RSA private key not configured!";
+                    msg.Title = "Server RSA private key not configured";
                     return new JsonResult(msg);
                 }
 
-                // 2. Giải mã AESKeyEncrypted bằng RSA
-                string aesKeyFromClient = null;
-                if (!string.IsNullOrEmpty(ojb.AESKeyEncrypted))
-                {
-                    using (var rsa = new System.Security.Cryptography.RSACryptoServiceProvider())
-                    {
-                        rsa.FromXmlString(privateKeyXml);
-                        var encryptedBytes = Convert.FromBase64String(ojb.AESKeyEncrypted);
-                        var decryptedBytes = rsa.Decrypt(encryptedBytes, true);
-                        aesKeyFromClient = System.Text.Encoding.UTF8.GetString(decryptedBytes);
-                    }
-                }
-                else
+                // =====================================================
+                // 2. GIẢI MÃ AES KEY (RSA OAEP SHA256)
+                // =====================================================
+                if (string.IsNullOrEmpty(ojb.AESKeyEncrypted))
                 {
                     msg.Error = true;
-                    msg.Title = "AESKeyEncrypted is missing!";
+                    msg.Title = "AESKeyEncrypted is missing";
                     return new JsonResult(msg);
                 }
 
-                // 3. Giải mã nội dung tin nhắn bằng AES key vừa giải mã được
-                string plainContent = null;
-                if (!string.IsNullOrEmpty(ojb.Content) && !string.IsNullOrEmpty(aesKeyFromClient))
+                string aesKeyFromClient;
+                try
                 {
-                    plainContent = SecurityHelper.DecryptAes(ojb.Content, aesKeyFromClient);
+                    aesKeyFromClient = SecurityHelper.DecryptRsaPem(
+                        ojb.AESKeyEncrypted,
+                        privateKeyPem
+                    );
+                    msg.Title = aesKeyFromClient;
                 }
-                else
+                catch (Exception e)
                 {
                     msg.Error = true;
-                    msg.Title = "Content or AES key is missing!";
+                    msg.Title = "Decrypt AES key failed "+ ojb.AESKeyEncrypted + e.Message;
                     return new JsonResult(msg);
                 }
 
-                // 4. Làm sạch nội dung để chống XSS
+                // =====================================================
+                // 3. GIẢI MÃ NỘI DUNG TIN NHẮN
+                // =====================================================
+                if (string.IsNullOrEmpty(ojb.Content))
+                {
+                    msg.Error = true;
+                    msg.Title = "Content is empty";
+                    return new JsonResult(msg);
+                }
+
+                string plainContent;
+                try
+                {
+                    plainContent = SecurityHelper.DecryptAes(
+                        ojb.Content,
+                        aesKeyFromClient
+                    );
+                    msg.Title = msg.Title + plainContent;
+                }
+                catch (Exception ex)
+                {
+                    msg.Error = true;
+                    msg.Title = "Decrypt content failed" + ex.Message;
+                    return new JsonResult(msg);
+                }
+
+                // =====================================================
+                // 4. SANITIZE (ANTI XSS)
+                // =====================================================
                 plainContent = SecurityHelper.SanitizeInput(plainContent);
 
-                // 5. Mã hóa lại nội dung bằng AESKey nội bộ trước khi lưu DB
-                string encryptedForDb = null;
-                if (!string.IsNullOrEmpty(_aesKey))
-                {
-                    encryptedForDb = SecurityHelper.EncryptAes(plainContent, _aesKey);
-                }
-                else
+                // =====================================================
+                // 5. MÃ HÓA LẠI BẰNG AES KEY NỘI BỘ SERVER
+                // =====================================================
+                if (string.IsNullOrEmpty(_aesKey))
                 {
                     msg.Error = true;
-                    msg.Title = "Server AESKey not configured!";
+                    msg.Title = "Server AES key not configured";
                     return new JsonResult(msg);
                 }
 
-                var data = _context.GroupMembers.Where(x => x.GroupChatId == ojb.GroupChatId).ToList();
-                for (int i = 0; i < data.Count; i++)
+                var encryptedForDb = SecurityHelper.EncryptAes(
+                    plainContent,
+                    _aesKey
+                );
+
+                // =====================================================
+                // 6. UPDATE MEMBER STATUS
+                // =====================================================
+                var members = _context.GroupMembers
+                    .Where(x => x.GroupChatId == ojb.GroupChatId)
+                    .ToList();
+
+                foreach (var m in members)
                 {
-                    if (data[i].MemberCode == StaticUser)
-                    {
-                        data[i].Status = true;
-                    }
-                    else
-                    {
-                        data[i].Status = false;
-                    }
-                    _context.GroupMembers.Update(data[i]);
+                    m.Status = (m.MemberCode == staticUser);
+                    _context.GroupMembers.Update(m);
                 }
 
-                var chatContent = new ChatContent();
-                chatContent.CreatedBy = StaticUser;
-                chatContent.Content = encryptedForDb ?? string.Empty;
-                chatContent.GroupChatId = ojb.GroupChatId;
-                chatContent.CreatedTime = DateTime.UtcNow;
-                chatContent.IsDeleted = false;
+                // =====================================================
+                // 7. LƯU CHAT CONTENT
+                // =====================================================
+                var chatContent = new ChatContent
+                {
+                    CreatedBy = staticUser,
+                    Content = encryptedForDb,
+                    GroupChatId = ojb.GroupChatId,
+                    CreatedTime = DateTime.UtcNow,
+                    IsDeleted = false
+                };
+
                 _context.ChatContents.Add(chatContent);
+                _context.SaveChanges();
 
                 msg.Id = chatContent.Id;
+
+                // =====================================================
+                // 8. UPLOAD FILE (NẾU CÓ)
+                // =====================================================
                 if (FileUpload != null && FileUpload.Count > 0)
                 {
                     chatContent.FileCode = chatContent.Id;
+
                     foreach (var file in FileUpload)
                     {
-                        string getDataLink = await _githubUploader.UploadFileAsync($"{_foderSaveChatFile}/{file.FileName}", file, $"Upload {file.FileName}");
-                        var SaveFile = new FileChat();
-                        SaveFile.FileCode = chatContent.FileCode;
-                        SaveFile.Name = file.FileName;
-                        SaveFile.CreatedTime = DateTime.UtcNow;
-                        SaveFile.Path = $"{_foderSaveChatFile}/{file.FileName}";
-                        SaveFile.Type = file.ContentType;
-                        SaveFile.Size = file.Length;
-                        SaveFile.IsDeleted = false;
-                        SaveFile.ServerCode = Directory.GetCurrentDirectory();
-                        _context.FileChats.Add(SaveFile);
+                        var link = await _githubUploader.UploadFileAsync(
+                            $"{_foderSaveChatFile}/{file.FileName}",
+                            file,
+                            $"Upload {file.FileName}"
+                        );
 
-                        if (msg.Object is List<object> newList)
+                        var saveFile = new FileChat
                         {
-                            newList.Add(new
-                            {
-                                Path = getDataLink,
-                                Type = SaveFile.Type,
-                                Id = SaveFile.Id,
-                                MessId = chatContent.Id,
-                                Name = SaveFile.Name
-                            });
-                        }
+                            FileCode = chatContent.FileCode,
+                            Name = file.FileName,
+                            Path = $"{_foderSaveChatFile}/{file.FileName}",
+                            Type = file.ContentType,
+                            Size = file.Length,
+                            CreatedTime = DateTime.UtcNow,
+                            IsDeleted = false,
+                            ServerCode = Directory.GetCurrentDirectory()
+                        };
+
+                        _context.FileChats.Add(saveFile);
+
+                        ((List<object>)msg.Object).Add(new
+                        {
+                            Path = link,
+                            Type = saveFile.Type,
+                            Id = saveFile.Id,
+                            MessId = chatContent.Id,
+                            Name = saveFile.Name
+                        });
                     }
-                    //_context.SaveChanges();
                 }
+
                 _context.SaveChanges();
                 return new JsonResult(msg);
             }
             catch (Exception ex)
             {
-                msg.Title = "lỗi" + ex;
                 msg.Error = true;
+                msg.Title =  ex.Message;
+                msg.Object = ojb;
                 return new JsonResult(msg);
             }
         }
+
         [HttpPost("CreateGroupChat")]
         [Authorize]
         public async Task<JsonResult> CreateGroupChat([FromForm] ChatGroupModelViews ojb)

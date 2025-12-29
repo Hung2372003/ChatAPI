@@ -5,9 +5,11 @@ namespace FakeFacebook.Common
 {
     public static class SecurityHelper
     {
-        // ================= AES =================
+        // =====================================================
+        // ====================== AES ==========================
+        // =====================================================
 
-        // 🔐 Encrypt → Base64(IV + Cipher)
+        // 🔐 Encrypt: Base64( IV + Cipher )
         public static string EncryptAes(string plainText, string aesKeyBase64)
         {
             if (string.IsNullOrEmpty(plainText)) return plainText;
@@ -25,7 +27,7 @@ namespace FakeFacebook.Common
             var plainBytes = Encoding.UTF8.GetBytes(plainText);
             var cipherBytes = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
 
-            // 📦 Gộp IV + Cipher
+            // IV + Cipher
             var result = new byte[aes.IV.Length + cipherBytes.Length];
             Buffer.BlockCopy(aes.IV, 0, result, 0, aes.IV.Length);
             Buffer.BlockCopy(cipherBytes, 0, result, aes.IV.Length, cipherBytes.Length);
@@ -33,7 +35,7 @@ namespace FakeFacebook.Common
             return Convert.ToBase64String(result);
         }
 
-        // 🔓 Decrypt Base64(IV + Cipher)
+        // 🔓 Decrypt: Base64( IV + Cipher )
         public static string DecryptAes(string base64Data, string aesKeyBase64)
         {
             if (string.IsNullOrEmpty(base64Data)) return base64Data;
@@ -61,29 +63,74 @@ namespace FakeFacebook.Common
             return Encoding.UTF8.GetString(plainBytes);
         }
 
-        // ================= RSA =================
+        // 🔑 Generate random AES key (256 bit)
+        public static string GenerateRandomAesKey()
+        {
+            var key = RandomNumberGenerator.GetBytes(32); // 256 bit
+            return Convert.ToBase64String(key);
+        }
 
-        // 🔐 RSA decrypt AES key (OAEP SHA256)
-        public static string DecryptRsa(string base64Cipher, string privateKeyXml)
+        // =====================================================
+        // ====================== RSA ==========================
+        // =====================================================
+
+        // 🔐 RSA Encrypt (PEM, OAEP SHA256)
+        public static string EncryptWithRsaPem(string plainText, string publicKeyPem)
+        {
+            var data = Encoding.UTF8.GetBytes(plainText);
+
+            using var rsa = RSA.Create();
+
+            var keyBase64 = publicKeyPem
+                .Replace("-----BEGIN PUBLIC KEY-----", "")
+                .Replace("-----END PUBLIC KEY-----", "")
+                .Replace("\r", "")
+                .Replace("\n", "");
+
+            var keyBytes = Convert.FromBase64String(keyBase64);
+            rsa.ImportSubjectPublicKeyInfo(keyBytes, out _);
+
+            var encrypted = rsa.Encrypt(data, RSAEncryptionPadding.OaepSHA1);
+            return Convert.ToBase64String(encrypted);
+        }
+
+        // 🔓 RSA Decrypt (PEM, OAEP SHA256)
+        public static string DecryptRsaPem(string base64Cipher, string privateKeyPem)
         {
             var cipherBytes = Convert.FromBase64String(base64Cipher);
 
             using var rsa = RSA.Create();
-            rsa.FromXmlString(privateKeyXml);
+
+            var keyBase64 = privateKeyPem
+                .Replace("-----BEGIN PRIVATE KEY-----", "")
+                .Replace("-----END PRIVATE KEY-----", "")
+                .Replace("\r", "")
+                .Replace("\n", "");
+
+            var keyBytes = Convert.FromBase64String(keyBase64);
+            rsa.ImportPkcs8PrivateKey(keyBytes, out _);
 
             var decrypted = rsa.Decrypt(cipherBytes, RSAEncryptionPadding.OaepSHA1);
             return Encoding.UTF8.GetString(decrypted);
         }
 
-        // ================= RSA KEY =================
-
-        public static (string privateKeyXml, string publicKeyXml) GenerateRsaKeyPair(int keySize = 2048)
+        // 🔑 Generate RSA key pair (PEM)
+        public static (string privatePem, string publicPem) GenerateRsaKeyPairPem()
         {
-            using var rsa = RSA.Create(keySize);
-            return (rsa.ToXmlString(true), rsa.ToXmlString(false));
+            using var rsa = RSA.Create(2048);
+
+            var privateKey = Convert.ToBase64String(rsa.ExportPkcs8PrivateKey());
+            var publicKey = Convert.ToBase64String(rsa.ExportSubjectPublicKeyInfo());
+
+            return (
+                $"-----BEGIN PRIVATE KEY-----\n{privateKey}\n-----END PRIVATE KEY-----",
+                $"-----BEGIN PUBLIC KEY-----\n{publicKey}\n-----END PUBLIC KEY-----"
+            );
         }
 
-        // ================= PASSWORD =================
+        // =====================================================
+        // =================== PASSWORD ========================
+        // =====================================================
 
         public static void CreatePasswordHash(
             string password,
@@ -105,42 +152,30 @@ namespace FakeFacebook.Common
             return computedHash.SequenceEqual(storedHash);
         }
 
-        public static string GenerateRandomAesKey()
-        {
-            // 256 bit = 32 bytes
-            var key = RandomNumberGenerator.GetBytes(32);
-            return Convert.ToBase64String(key);
-        }
-        public static string EncryptWithRsa(string plainText, string publicKeyXml)
-        {
-            var data = Encoding.UTF8.GetBytes(plainText);
+        // =====================================================
+        // ==================== SANITIZE =======================
+        // =====================================================
 
-            using var rsa = RSA.Create();
-            rsa.FromXmlString(publicKeyXml);
-
-            var encrypted = rsa.Encrypt(data, RSAEncryptionPadding.OaepSHA1);
-            return Convert.ToBase64String(encrypted);
-        }
         public static string SanitizeInput(string input)
         {
             if (string.IsNullOrEmpty(input)) return input;
-            #if HAS_HTMLSANITIZER
-                        // Nếu đã cài HtmlSanitizer (Ganss.XSS), dùng thư viện này
-                        var sanitizer = new Ganss.XSS.HtmlSanitizer();
-                        return sanitizer.Sanitize(input);
-            #else
-            // Nếu chưa cài, fallback về hàm cũ (loại bỏ thẻ html/script đơn giản)
+
             var array = new char[input.Length];
             int arrayIndex = 0;
             bool inside = false;
-            foreach (var @let in input)
+
+            foreach (var c in input)
             {
-                if (@let == '<') { inside = true; continue; }
-                if (@let == '>') { inside = false; continue; }
-                if (!inside) { array[arrayIndex] = @let; arrayIndex++; }
+                if (c == '<') { inside = true; continue; }
+                if (c == '>') { inside = false; continue; }
+                if (!inside)
+                {
+                    array[arrayIndex] = c;
+                    arrayIndex++;
+                }
             }
+
             return new string(array, 0, arrayIndex);
-            #endif
         }
     }
 }
