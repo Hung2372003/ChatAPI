@@ -1,5 +1,7 @@
-﻿using FakeFacebook.Data;
+﻿using FakeFacebook.Common;
+using FakeFacebook.Data;
 using FakeFacebook.Models;
+using FakeFacebook.ModelViewControllers.ChatBox;
 using FakeFacebook.Service;
 using FirebaseAdmin;
 using FirebaseAdmin.Messaging;
@@ -11,6 +13,8 @@ using System.Text;
 
 namespace FakeFacebook.Controllers
 {
+    
+
     public class TestController : ControllerBase
     {
         private readonly IConfiguration _configuration;
@@ -19,12 +23,14 @@ namespace FakeFacebook.Controllers
         private readonly IFirebasePushService _firebasePushService;
         private readonly ICloudinaryService _cloudinaryService;
         private static bool _isFirebaseInitialized = false;
+        private readonly RsaKeyProvider _rsaKeyProvider;
         public TestController(
             IConfiguration configuration,
             FakeFacebookDbContext context,
             GitHubUploaderService githubUploader,
             ICloudinaryService cloudinaryService,
-            IFirebasePushService firebasePushService
+            IFirebasePushService firebasePushService,
+            RsaKeyProvider rsaKeyProvider
             )
 
         {
@@ -33,8 +39,68 @@ namespace FakeFacebook.Controllers
             _githubUploader = githubUploader;
             _firebasePushService = firebasePushService;
             _cloudinaryService = cloudinaryService;
+            _rsaKeyProvider = rsaKeyProvider;
         }
 
+        public class SecureMessageRequest
+        {
+            public string Data { get; set; }           // Base64(IV + Cipher)
+            public string EncryptedKey { get; set; }   // RSA encrypted AES key
+        }
+
+        public class SecureMessageResponse
+        {
+            public string PlainText { get; set; }
+        }
+
+
+        // 🔓 Client gọi API này để lấy public key
+        [HttpGet("public-key")]
+        public IActionResult GetPublicKey()
+        {
+            return Ok(new
+            {
+                publicKey = _rsaKeyProvider.PublicKeyXml
+            });
+        }
+
+        [HttpPost("decrypt")]
+        public IActionResult Decrypt([FromBody] SecureMessageRequest request)
+        {
+            if (string.IsNullOrEmpty(request.Data) ||
+                string.IsNullOrEmpty(request.EncryptedKey))
+            {
+                return BadRequest("Invalid payload");
+            }
+
+            try
+            {
+                // 1️⃣ RSA decrypt AES key
+                var aesKeyBase64 = SecurityHelper.DecryptRsa(
+                    request.EncryptedKey,
+                    _rsaKeyProvider.PrivateKeyXml
+                );
+
+                // 2️⃣ AES decrypt message
+                var plainText = SecurityHelper.DecryptAes(
+                    request.Data,
+                    aesKeyBase64
+                );
+
+                return Ok(new
+                {
+                    plainText
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    message = "Decrypt failed",
+                    error = ex.Message
+                });
+            }
+        }
 
 
         //[HttpPost("upload-video")]
@@ -57,6 +123,8 @@ namespace FakeFacebook.Controllers
             return Ok(new { Url = url.Url, PublicId = url.PublicId });
             ;
         }
+
+
 
         //[HttpPost("image")]
         public async Task<IActionResult> UploadImageGit(IFormFile file)

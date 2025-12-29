@@ -7,6 +7,7 @@
         public object? Object { get; set; }
         public int? Id { get; set; }
         public object? PreventiveObject { get; set; }
+        public String RSAPublickeySever { get; set; }
 
     }
 }

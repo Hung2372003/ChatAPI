@@ -4,8 +4,10 @@
     {
         public int GroupChatId { get; set; }
         public string? Content { get; set; }
-        public string? AESKey { get; set; }
 
+        public string? AesKey { get; set; }
+        public string? AESKeyEncrypted { get; set; }
+       
         //new - not
         //public int? PostId { get; set; }
     }

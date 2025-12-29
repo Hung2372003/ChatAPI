@@ -1,4 +1,5 @@
-﻿using FakeFacebook.Data;
+﻿using FakeFacebook.Common;
+using FakeFacebook.Data;
 using FakeFacebook.Hubs;
 using FakeFacebook.Service;
 using FirebaseAdmin;
@@ -17,6 +18,7 @@ var key = builder.Configuration["JwtSettings:SecretKey"] ?? "2372003HungsssDepZa
 bool isRunningMigration = builder.Configuration["DOTNET_RUNNING_IN_MIGRATION"] == "true";
 
 if (!isRunningMigration){ builder.Services.AddFirebase();}
+builder.Services.AddSingleton<RsaKeyProvider>();
 if (builder.Environment.IsDevelopment())
 {
     builder.WebHost.UseUrls("https://0.0.0.0:7158", "http://0.0.0.0:5176");

@@ -32,23 +32,31 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
      
 
         private readonly string? _aesKey;
-        private string TryDecrypt(string content, string key)
+        private bool IsBase64String(string input)
         {
+            Span<byte> buffer = stackalloc byte[input.Length];
+            return Convert.TryFromBase64String(input, buffer, out _);
+        }
+
+        private string TryDecrypt(string content, string aesKeyBase64)
+        {
+            if (string.IsNullOrWhiteSpace(content) || string.IsNullOrWhiteSpace(aesKeyBase64))
+                return content;
             try
             {
-                if (string.IsNullOrEmpty(content) || string.IsNullOrEmpty(key))
+                if (!IsBase64String(content))
                     return content;
-                // Kiểm tra độ dài tối thiểu (IV 16 bytes + ít nhất 1 block)
                 var buffer = Convert.FromBase64String(content);
-                if (buffer.Length < 16 + 16) // 16 bytes IV + 16 bytes block
+                if (buffer.Length < 32)
                     return content;
-                return SecurityHelper.DecryptAes(content, key);
+                return SecurityHelper.DecryptAes(content, aesKeyBase64);
             }
             catch
             {
                 return content;
             }
         }
+
         public ChatBoxController(FakeFacebookDbContext context, IConfiguration configuration, GitHubUploaderService githubUploader, ICloudinaryService cloudinaryService, IMemoryCache cache)
 
         {
@@ -156,209 +164,183 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
         // Post-----------------------------------------------------
         [HttpPost("CreateWindowChat")]
         [Authorize]
-        // tạo tin nhắn nếu có
         public JsonResult GenernalMessageData([FromBody] CreateWindowChat data)
         {
-           
-            var msg = new Message() { Id = null, Title = "", Error = false, Object = "", PreventiveObject = "" };
-            var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var msg = new Message();
+            var staticUser = int.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
             try
             {
-                int limit = (data.Limit.HasValue && data.Limit.Value > 0) ? data.Limit.Value : 20;
-                int offset = (data.Offset.HasValue && data.Offset.Value >= 0) ? data.Offset.Value : 0;
+                int limit = data.Limit.GetValueOrDefault(20);
+                int offset = data.Offset.GetValueOrDefault(0);
 
-                // Sinh AES key cho session
+                // ===== 1. Sinh AES session key =====
                 string sessionAesKey = SecurityHelper.GenerateRandomAesKey();
-                string encryptedAesKey = null;
+                string? encryptedAesKey = null;
+
                 if (!string.IsNullOrEmpty(data.RSAPublicKey))
                 {
-                    encryptedAesKey = SecurityHelper.EncryptWithRsa(sessionAesKey, data.RSAPublicKey);
+                    encryptedAesKey = SecurityHelper.EncryptWithRsa(
+                        sessionAesKey,
+                        data.RSAPublicKey
+                    );
                 }
 
-                if (data?.UserCode != null)
+                int? groupChatId = data.GroupChatId;
+
+                // ===== 2. Tạo group chat nếu là chat đôi =====
+                if (data.UserCode.HasValue)
                 {
-                    var CheckGroupChatIdNew = from a in _context.ChatGroups.Where(x => x.GroupDouble == true && x.IsDeleted == false)
-                                              join b in _context.GroupMembers.Where(x => x.MemberCode == data.UserCode && x.IsDeleted == false)
-                                              on a.Id equals b.GroupChatId
-                                              select new { a.Id };
+                    groupChatId = GetOrCreateDoubleChat(staticUser, data.UserCode.Value);
 
-                    var GroupChatId = (from a in CheckGroupChatIdNew
-                                       join b in _context.GroupMembers.Where(x => x.MemberCode == StaticUser && x.IsDeleted == false)
-                                       on a.Id equals b.GroupChatId
-                                       select new { a.Id })?.FirstOrDefault()?.Id;
-
-                    if (GroupChatId == null)
+                    if (groupChatId == null)
                     {
-                        var addGroup = new ChatGroups
-                        {
-                            GroupDouble = true,
-                            CreatedBy = StaticUser,
-                            CreatedTime = DateTime.UtcNow,
-                            Quantity = 2,
-                            IsDeleted = false
-                        };
-                        _context.Add(addGroup);
-                        _context.SaveChanges();
-
-                        var addMember1 = new GroupMember
-                        {
-                            GroupChatId = addGroup.Id,
-                            MemberCode = StaticUser,
-                            IsDeleted = false,
-                            InvitedTime = DateTime.UtcNow,
-                            InvitedBy = StaticUser
-                        };
-                        _context.Add(addMember1);
-
-                        var addMember2 = new GroupMember
-                        {
-                            GroupChatId = addGroup.Id,
-                            MemberCode = data.UserCode,
-                            InvitedBy = StaticUser,
-                            InvitedTime = DateTime.UtcNow,
-                            IsDeleted = false
-                        };
-                        _context.Add(addMember2);
-                        _context.SaveChanges();
-
-                        msg.PreventiveObject = new { GroupChatId = addGroup.Id };
                         msg.Title = "NotMess";
-                        return new JsonResult(msg);
-                    }
-                    else
-                    {
-                        var SetStatus = _context.GroupMembers.Where(x => x.GroupChatId == GroupChatId && x.IsDeleted == false).ToList();
-                        foreach (var item in SetStatus)
-                            item.Status = item.MemberCode == StaticUser ? true : item.Status;
-
-                        _context.SaveChanges();
-
-                        var checkContent = _context.ChatContents.FirstOrDefault(x => x.GroupChatId == GroupChatId)?.Id;
-                        if (checkContent == null)
-                        {
-                            msg.PreventiveObject = new { GroupChatId = GroupChatId };
-                            msg.Title = "NotMess";
-                            return new JsonResult(msg);
-                        }
-
-                        var messRaw = (from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId && (data.MessId == null || x.Id < data.MessId)).OrderByDescending(x => x.Id).Take(limit).Skip(offset)
-                            join b in _context.FileChats on a.FileCode equals b.FileCode into b1
-                            from b in b1.DefaultIfEmpty()
-                            group new { a, b }
-                            by new
-                            {
-                                a.Id,
-                                a.CreatedBy,
-                                a.Content,
-                                a.CreatedTime,
-                                a.GroupChatId,
-                                a.FileCode
-                            } into e
-                            select new
-                            {
-                                e.Key.Id,
-                                e.Key.CreatedBy,
-                                e.Key.Content, // chưa giải mã!
-                                e.Key.CreatedTime,
-                                e.Key.FileCode,
-                                ListFile = e.Where(x => x.b != null).Select(x => new
-                                {
-                                    x.b.Id,
-                                    x.b.Name,
-                                    Path = $"{_getImageDataLink}/{x.b.Path}",
-                                    x.b.Type,
-                                    GroupDouble = true,
-                                }).ToList(),
-                            }).ToList();
-
-
-                        var mess = messRaw.Select(m => new
-                            {
-                                m.Id,
-                                m.CreatedBy,
-                                // Giải mã bằng _aesKey, sau đó mã hóa lại bằng sessionAesKey
-                                Content = SecurityHelper.EncryptAes(TryDecrypt(m.Content, _aesKey), sessionAesKey),
-                                m.CreatedTime,
-                                m.FileCode,
-                                m.ListFile
-                            }).ToList();
-
-                        msg.Title = "MessOk";
-                        msg.Object = mess;
-                        msg.PreventiveObject = new
-                        {
-                            GroupChatId = GroupChatId,
-                            EncryptedAesKey = encryptedAesKey,
-                        };
+                        msg.PreventiveObject = new { GroupChatId = groupChatId };
                         return new JsonResult(msg);
                     }
                 }
-                else if (data?.GroupChatId != null)
+
+                if (groupChatId == null)
+                    return new JsonResult(msg);
+
+                // ===== 3. Update status =====
+                UpdateMemberStatus(groupChatId.Value, staticUser);
+
+                // ===== 4. Lấy raw message (chưa giải mã) =====
+                var messRaw = GetRawMessages(groupChatId.Value, data.MessId, limit, offset);
+
+                if (!messRaw.Any())
                 {
-                    var SetStatus = _context.GroupMembers.Where(x => x.GroupChatId == data.GroupChatId && x.IsDeleted == false).ToList();
-                    foreach (var item in SetStatus)
-                        item.Status = item.MemberCode == StaticUser ? true : item.Status;
-
-                    _context.SaveChanges();
-
-                    var messRaw = (from a in _context.ChatContents.Where(x => x.GroupChatId == data.GroupChatId && (data.MessId == null || x.Id < data.MessId)).OrderByDescending(x => x.Id).Take(limit).Skip(offset)
-                        join b in _context.FileChats on a.FileCode equals b.FileCode into b1
-                        from b in b1.DefaultIfEmpty()
-                        group new { a, b }
-                        by new
-                        {
-                            a.Id,
-                            a.CreatedBy,
-                            a.Content,
-                            a.CreatedTime,
-                            a.GroupChatId,
-                            a.FileCode
-                        } into e
-                        select new
-                        {
-                            e.Key.Id,
-                            e.Key.CreatedBy,
-                            e.Key.Content, // chưa giải mã!
-                            e.Key.CreatedTime,
-                            e.Key.FileCode,
-                            ListFile = e.Where(x => x.b != null).Select(x => new
-                            {
-                                x.b.Id,
-                                x.b.Name,
-                                Path = $"{_getImageDataLink}/{x.b.Path}",
-                                x.b.Type,
-                                GroupDouble = true,
-                            }).ToList(),
-                        }).ToList();
-
-                    var mess = messRaw.Select(m => new
-                            {
-                                m.Id,
-                                m.CreatedBy,
-                                // Giải mã bằng _aesKey, sau đó mã hóa lại bằng sessionAesKey
-                                Content = SecurityHelper.EncryptAes(TryDecrypt(m.Content, _aesKey), sessionAesKey),
-                                m.CreatedTime,
-                                m.FileCode,
-                                m.ListFile
-                            }).ToList();
-
-                    msg.Title = "MessOk";
-                    msg.Object = mess;
-                    msg.PreventiveObject = new
-                    {
-                        GroupChatId = data.GroupChatId,
-                        EncryptedAesKey = encryptedAesKey,
-                    };
+                    msg.Title = "NotMess";
+                    msg.PreventiveObject = new { GroupChatId = groupChatId };
                     return new JsonResult(msg);
                 }
+
+                // ===== 5. Giải mã DB key → mã hoá lại session key =====
+                var messages = messRaw.Select(m => new
+                {
+                    m.Id,
+                    m.CreatedBy,
+                    Content = SecurityHelper.EncryptAes(
+                        TryDecrypt(m.Content, _aesKey),
+                        sessionAesKey
+                    ),
+                    m.CreatedTime,
+                    m.FileCode,
+                    m.ListFile
+                }).ToList();
+
+                // ===== 6. Response =====
+                msg.Title = "MessOk";
+                msg.Object = messages;
+                msg.PreventiveObject = new
+                {
+                    GroupChatId = groupChatId,
+                    EncryptedAesKey = encryptedAesKey
+                };
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                msg.Title = $"Có lỗi xảy ra: {e.Message}";
                 msg.Error = true;
+                msg.Title = $"Có lỗi xảy ra: {ex.Message}";
             }
 
             return new JsonResult(msg);
+        }
+        private int GetOrCreateDoubleChat(int user1, int user2)
+        {
+            var groupId = (
+                from g in _context.ChatGroups
+                join m1 in _context.GroupMembers on g.Id equals m1.GroupChatId
+                join m2 in _context.GroupMembers on g.Id equals m2.GroupChatId
+                where g.GroupDouble
+                      && !g.IsDeleted
+                      && m1.MemberCode == user1
+                      && m2.MemberCode == user2
+                select g.Id
+            ).FirstOrDefault();
+
+            if (groupId != 0)
+                return groupId;
+
+            var group = new ChatGroups
+            {
+                GroupDouble = true,
+                CreatedBy = user1,
+                CreatedTime = DateTime.UtcNow,
+                Quantity = 2,
+                IsDeleted = false
+            };
+
+            _context.ChatGroups.Add(group);
+            _context.SaveChanges();
+
+            _context.GroupMembers.AddRange(
+                new GroupMember
+                {
+                    GroupChatId = group.Id,
+                    MemberCode = user1,
+                    InvitedBy = user1,
+                    InvitedTime = DateTime.UtcNow,
+                    IsDeleted = false
+                },
+                new GroupMember
+                {
+                    GroupChatId = group.Id,
+                    MemberCode = user2,
+                    InvitedBy = user1,
+                    InvitedTime = DateTime.UtcNow,
+                    IsDeleted = false
+                }
+            );
+
+            _context.SaveChanges();
+            return group.Id;
+        }
+
+        private void UpdateMemberStatus(int groupChatId, int userId)
+        {
+            var members = _context.GroupMembers
+                .Where(x => x.GroupChatId == groupChatId && !x.IsDeleted)
+                .ToList();
+
+            foreach (var m in members)
+                m.Status = m.MemberCode == userId || m.Status;
+
+            _context.SaveChanges();
+        }
+        private List<dynamic> GetRawMessages(int groupChatId, int? messId, int limit, int offset)
+        {
+            return (
+                from a in _context.ChatContents
+                where a.GroupChatId == groupChatId
+                      && (!messId.HasValue || a.Id < messId)
+                orderby a.Id descending
+                select new
+                {
+                    a.Id,
+                    a.CreatedBy,
+                    a.Content,
+                    a.CreatedTime,
+                    a.FileCode,
+                    ListFile = (
+                        from f in _context.FileChats
+                        where f.FileCode == a.FileCode
+                        select new
+                        {
+                            f.Id,
+                            f.Name,
+                            Path = $"{_getImageDataLink}/{f.Path}",
+                            f.Type,
+                            GroupDouble = true
+                        }
+                    ).ToList()
+                }
+            )
+            .Skip(offset)
+            .Take(limit)
+            .ToList<dynamic>();
         }
 
 
@@ -366,26 +348,75 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
         [Authorize]
         public async Task<IActionResult> AddNewMessage([FromForm] ChatBoxModelViews ojb, [FromForm] List<IFormFile> FileUpload)
         {
-            // --- BỔ SUNG: Làm sạch dữ liệu đầu vào để chống XSS ---
-            // Nếu muốn tắt xử lý này, chỉ cần comment lại các dòng dưới đây
-            if (ojb != null)
-            {
-                 ojb.Content = SecurityHelper.SanitizeInput(ojb.Content);
-                    if (!string.IsNullOrEmpty(_aesKey))
-                        ojb.Content = SecurityHelper.EncryptAes(ojb.Content, _aesKey);
-                // Nếu có thêm trường string khác cần chống XSS, thêm vào đây
-            }
+            // Quy trình: Giải mã AESKeyEncrypted bằng RSA private key, giải mã Content bằng AES key đó, mã hóa lại bằng AESKey nội bộ
             var msg = new Message { Id = 0, Error = false, Title = "", Object = new List<object>() };
             var StaticUser = Convert.ToInt32(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             try
             {
-
                 if (ojb == null)
                 {
                     msg.Error = true;
                     msg.Title = "ojb is null";
                     return new JsonResult(msg);
                 }
+
+                // 1. Lấy private key server từ config
+                var privateKeyXml = HttpContext.RequestServices.GetService(typeof(IConfiguration)) is IConfiguration config ? config["RSA:RSAPrivateKeyServer"] : null;
+                if (string.IsNullOrEmpty(privateKeyXml))
+                {
+                    msg.Error = true;
+                    msg.Title = "Server RSA private key not configured!";
+                    return new JsonResult(msg);
+                }
+
+                // 2. Giải mã AESKeyEncrypted bằng RSA
+                string aesKeyFromClient = null;
+                if (!string.IsNullOrEmpty(ojb.AESKeyEncrypted))
+                {
+                    using (var rsa = new System.Security.Cryptography.RSACryptoServiceProvider())
+                    {
+                        rsa.FromXmlString(privateKeyXml);
+                        var encryptedBytes = Convert.FromBase64String(ojb.AESKeyEncrypted);
+                        var decryptedBytes = rsa.Decrypt(encryptedBytes, true);
+                        aesKeyFromClient = System.Text.Encoding.UTF8.GetString(decryptedBytes);
+                    }
+                }
+                else
+                {
+                    msg.Error = true;
+                    msg.Title = "AESKeyEncrypted is missing!";
+                    return new JsonResult(msg);
+                }
+
+                // 3. Giải mã nội dung tin nhắn bằng AES key vừa giải mã được
+                string plainContent = null;
+                if (!string.IsNullOrEmpty(ojb.Content) && !string.IsNullOrEmpty(aesKeyFromClient))
+                {
+                    plainContent = SecurityHelper.DecryptAes(ojb.Content, aesKeyFromClient);
+                }
+                else
+                {
+                    msg.Error = true;
+                    msg.Title = "Content or AES key is missing!";
+                    return new JsonResult(msg);
+                }
+
+                // 4. Làm sạch nội dung để chống XSS
+                plainContent = SecurityHelper.SanitizeInput(plainContent);
+
+                // 5. Mã hóa lại nội dung bằng AESKey nội bộ trước khi lưu DB
+                string encryptedForDb = null;
+                if (!string.IsNullOrEmpty(_aesKey))
+                {
+                    encryptedForDb = SecurityHelper.EncryptAes(plainContent, _aesKey);
+                }
+                else
+                {
+                    msg.Error = true;
+                    msg.Title = "Server AESKey not configured!";
+                    return new JsonResult(msg);
+                }
+
                 var data = _context.GroupMembers.Where(x => x.GroupChatId == ojb.GroupChatId).ToList();
                 for (int i = 0; i < data.Count; i++)
                 {
@@ -402,7 +433,7 @@ namespace FakeFacebook.Controllers.ChatBoxManagerment
 
                 var chatContent = new ChatContent();
                 chatContent.CreatedBy = StaticUser;
-                chatContent.Content = ojb.Content ?? string.Empty;
+                chatContent.Content = encryptedForDb ?? string.Empty;
                 chatContent.GroupChatId = ojb.GroupChatId;
                 chatContent.CreatedTime = DateTime.UtcNow;
                 chatContent.IsDeleted = false;

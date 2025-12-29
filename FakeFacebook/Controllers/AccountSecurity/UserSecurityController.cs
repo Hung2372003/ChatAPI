@@ -40,54 +40,15 @@ namespace FakeFacebook.Controllers.AccountSecurity
             _googleAuthService = googleAuthService;
             _foderSaveAvatarImage = "Images/Avatar";
             _httpClientFactory = httpClientFactory;
-
         }
+
+
 
         [HttpPost("UserLogin")]
         public JsonResult UserLogin([FromBody] LoginModelViews loginModel) 
         {
-            // --- CODE CŨ (chưa bảo mật, chỉ dùng plain text) ---
-            /*
-            var msg = new Message() { Id=null,Title = "", Error = false, Object = "" };
-            try {
-                loginModel.Username = loginModel.Username;
-                loginModel.Password = loginModel.Password;
-                var CheckUser = _context.UserAccounts.FirstOrDefault(x => x.UserName == loginModel.Username);
-                if ( CheckUser!=null && CheckUser.UserPassword == loginModel.Password ) {
-                    var userIfo = _context.UserInformations.FirstOrDefault(x => x.Id == CheckUser.UserCode);
-                    var Name = userIfo?.Name;
-                    var Avatar = $"{_getImageDataLink}/{userIfo.Avatar}";
-                    var token = _jwtService.GenerateJwtToken(CheckUser.UserCode, CheckUser?.Role ?? "User", CheckUser?.Permission ?? "NOT", Name ?? "", Avatar);
-                    Response.Cookies.Append("access_token", token, new CookieOptions
-                    {
-                        HttpOnly = true,
-                        Secure = true, // dùng HTTPS
-                        SameSite = SameSiteMode.None,
-                        Expires = DateTimeOffset.UtcNow.AddHours(24)
-                    });
-                    msg.Title = "Đăng nhập thành công";
-                    msg.Object = token;
-                    msg.Id = CheckUser?.UserCode;
-                    return new JsonResult(msg);
-                }
-                else if (  CheckUser != null && CheckUser.UserPassword != loginModel.Password)
-                {
-                    msg.Error = true;
-                    msg.Title = "Mật khẩu không chính xác";
-                }    
-                else {
-                    msg.Error = true;
-                    msg.Title = "Tài khoản không tồn tại";
-                }
-            }
-            catch(Exception e) {
-                msg.Error = true;
-                msg.Title = " Có lỗi xảy ra khi đăng nhập: " + e.Message; 
-            }
-            return new JsonResult(msg);
-            */
-            // --- CODE MỚI (bảo mật, ưu tiên hash + salt) ---
-            var msg = new Message() { Id = null, Title = "", Error = false, Object = "" };
+
+            var msg = new Message() { Id = null, Title = "", Error = false, Object = "" };       
             try
             {
                 loginModel.Username = loginModel.Username;
@@ -167,64 +128,6 @@ namespace FakeFacebook.Controllers.AccountSecurity
         public JsonResult RegisterAcc([FromBody] RegisterAccModelViews RegAcc)
         { 
             var msg = new Message() { Id = null, Title = "", Error = false, Object = "" };
-            // --- CODE CŨ (chưa bảo mật, chỉ dùng plain text) ---
-            /*
-            try
-            {
-                var check = _context.UserAccounts.FirstOrDefault(x => x.UserName == RegAcc.UserAccount);
-                if (check != null) {
-                    msg.Error = true;
-                    msg.Title = "Tên tài khoản đã tồn tại";
-                    return new JsonResult(msg);
-                }
-                var AddInfor = new UserInformation();
-                AddInfor.IsDeleted = false;
-                AddInfor.Name = RegAcc.Name;
-                AddInfor.Email =RegAcc.Email;
-                AddInfor.PhoneNumber= RegAcc.PhoneNumber;
-                AddInfor.Address = RegAcc.Address;
-                AddInfor.Birthday=(RegAcc.Birthday!="" && RegAcc.Birthday!= null) ? DateTimeOffset.Parse(RegAcc.Birthday, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal).UtcDateTime.Date:null;
-                AddInfor.Avatar= $"{_foderSaveAvatarImage}/mostavatar.png";
-                AddInfor.CreatedTime=DateTime.UtcNow;
-                AddInfor.IsEncryption = true;
-                _context.UserInformations.Add(AddInfor);
-                _context.SaveChanges();
-
-                var AddAcc = new UserAccount();
-                AddAcc.UserCode = AddInfor.Id;
-                AddAcc.IsDeleted = false;
-                AddAcc.UserName = RegAcc.UserAccount;
-                AddAcc.UserPassword = RegAcc.Password;
-                AddAcc.CreatedTime = DateTime.UtcNow;
-                AddAcc.UpdatedTime= DateTime.UtcNow;
-                AddAcc.CreatedBy = AddInfor.Id;
-                AddAcc.IsEncryption = true;
-                AddAcc.Role = "User";
-                AddAcc.Permission = "NOT";
-                _context.UserAccounts.Add(AddAcc);
-                _context.SaveChanges();
-
-                var Avatar = $"{_getImageDataLink}/{AddInfor.Avatar}";
-                var token = _jwtService.GenerateJwtToken(AddAcc.UserCode, AddAcc.Role, AddAcc.Permission,AddInfor.Name ?? "",Avatar);
-                Response.Cookies.Append("access_token", token, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = false, // dùng HTTPS
-                    SameSite = SameSiteMode.Lax,
-                    Expires = DateTimeOffset.UtcNow.AddHours(24)
-                });
-                msg.Id = AddAcc.UserCode;
-                msg.Title = "Đăng ký tài khoản thành công";
-                msg.Object = token;
-            }
-            catch (Exception e) 
-            {
-                msg.Title="có lỗi xảy ra khi tạo tài khoản: " + e.Message;
-                msg.Error = true;
-            }
-            return new JsonResult(msg);
-            */
-            // --- CODE MỚI (bảo mật, hash + salt) ---
             try
             {
                 // Sanitize các trường đầu vào để chống XSS

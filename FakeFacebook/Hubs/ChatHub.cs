@@ -1,20 +1,39 @@
 ﻿
 using Microsoft.AspNetCore.SignalR;
 namespace FakeFacebook.Hubs;
+
+using FakeFacebook.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.VisualBasic;
 using System.Security.Claims;
+using System.Security.Cryptography;
 
 [Authorize]
 public class ChatHub : Hub
     {
     private static readonly Dictionary<string, string> _connections = new Dictionary<string, string>();
+    private readonly RsaKeyProvider _rsa;
+
+    public ChatHub(RsaKeyProvider rsa)
+    {
+        _rsa = rsa;
+    }
     public override async Task OnConnectedAsync()
     {
-        var UserCode = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        _connections[Context.ConnectionId] = UserCode ?? "";
-        var ListUser = GetAllConnectedUsers();
-        await Clients.All.SendAsync("ListUserOnline", ListUser);
+        var userCode = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+
+        _connections[Context.ConnectionId] = userCode;
+
+        // ✅ GỬI PUBLIC KEY CHO CLIENT VỪA CONNECT
+        await Clients.Caller.SendAsync(
+            "ReceivePublicKey",
+            _rsa.PublicKeyXml
+        );
+
+        // Online users
+        var listUser = GetAllConnectedUsers();
+        await Clients.All.SendAsync("ListUserOnline", listUser);
+
         await base.OnConnectedAsync();
     }
     public override async Task OnDisconnectedAsync(Exception? exception)
